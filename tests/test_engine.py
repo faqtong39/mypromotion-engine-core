@@ -1,6 +1,7 @@
 """
 引擎核心全面测试
 """
+from datetime import datetime
 from decimal import Decimal
 
 from promotion_engine import Engine, Cart, CartItem, Rule
@@ -10,6 +11,7 @@ from promotion_engine.types import (
     RuleCondition,
     RuleScope,
     SpecialMutexRule,
+    UsedCoupon,
 )
 
 
@@ -101,13 +103,13 @@ def test_tiered_price_by_quantity():
     cart.add_item(CartItem(sku="T001", price=Decimal("100.00"), quantity=5))
 
     rule = Rule.tiered_price(tiers=[
-        {"quantity": 1, "price": 100},
-        {"quantity": 3, "price": 90},
-        {"quantity": 5, "price": 80},
+        {"quantity": 1, "amount": 0},
+        {"quantity": 3, "amount": 10},
+        {"quantity": 5, "amount": 20},
     ])
     result = Engine().calculate(CalculationContext(cart_items=cart.items), [rule])
 
-    # 5件 × 80元 = 400元，原价500元，优惠100元
+    # 5件，原价500元，每件减20元，优惠100元
     assert result.total_discount == Decimal("100.00")
     assert result.payable_amount == Decimal("400.00")
 
@@ -507,3 +509,144 @@ def test_condition_and_logic():
 
     assert len(result.applied_promotions) == 0
     assert result.skipped_rules[0]["reason"] == "conditions_not_met"
+
+
+# ==================== 新增插件测试 ====================
+
+def test_yearly_date_condition():
+    """每年固定日期条件测试"""
+    cart = Cart()
+    cart.add_item(CartItem(sku="Y001", price=Decimal("200.00"), quantity=1))
+
+    rule = Rule(
+        promotion_code="双11",
+        strategy_type="full_reduction",
+        priority=100,
+        conditions=[RuleCondition(condition_type="yearly_date", config={"month": 11, "day": 11})],
+        actions=[RuleAction(action_type="fixed_amount_reduction", config={"amount": 50})],
+    )
+    # 双11当天命中
+    result = Engine().calculate(
+        CalculationContext(cart_items=cart.items, current_time=datetime(2026, 11, 11)), [rule]
+    )
+    assert len(result.applied_promotions) == 1
+    assert result.total_discount == Decimal("50.00")
+
+    # 双11后一天跳过
+    result2 = Engine().calculate(
+        CalculationContext(cart_items=cart.items, current_time=datetime(2026, 11, 12)), [rule]
+    )
+    assert len(result2.applied_promotions) == 0
+    assert result2.skipped_rules[0]["reason"] == "conditions_not_met"
+
+
+def test_config_driven_condition():
+    """配置驱动条件测试"""
+    cart = Cart()
+    cart.add_item(CartItem(sku="C001", price=Decimal("200.00"), quantity=1))
+
+    rule = Rule(
+        promotion_code="VIP专享",
+        strategy_type="full_reduction",
+        priority=100,
+        conditions=[
+            RuleCondition(
+                condition_type="_config_driven_condition",
+                config={"field": "context.user_group", "operator": "eq", "value": "vip"},
+            )
+        ],
+        actions=[RuleAction(action_type="fixed_amount_reduction", config={"amount": 30})],
+    )
+    # VIP 命中
+    result = Engine().calculate(
+        CalculationContext(cart_items=cart.items, user_group="vip"), [rule]
+    )
+    assert len(result.applied_promotions) == 1
+    assert result.total_discount == Decimal("30.00")
+
+    # 普通用户跳过
+    result2 = Engine().calculate(
+        CalculationContext(cart_items=cart.items, user_group="normal"), [rule]
+    )
+    assert len(result2.applied_promotions) == 0
+
+
+# ==================== 单向互斥排序测试 ====================
+
+def test_unidirectional_mutex_priority_order():
+    """单向互斥强制排序：高优先级规则排在前面，低优先级被互斥跳过"""
+    cart = Cart()
+    cart.add_item(CartItem(sku="U001", price=Decimal("500.00"), quantity=1))
+
+    rule1 = Rule.full_reduction(threshold=400, amount=50, promotion_code="R1", priority=50)
+    rule2 = Rule.full_reduction(threshold=400, amount=100, promotion_code="R2", priority=100)
+
+    engine = Engine(
+        special_mutex_rules=[
+            SpecialMutexRule(
+                rule_a_id="R2",
+                rule_b_id="R1",
+                is_bidirectional=False,
+                priority_direction="a",
+                is_active=True,
+            )
+        ]
+    )
+    result = engine.calculate(CalculationContext(cart_items=cart.items), [rule1, rule2])
+
+    assert len(result.applied_promotions) == 1
+    assert result.applied_promotions[0].promotion_code == "R2"
+    assert result.applied_promotions[0].discount == Decimal("100.00")
+    assert result.payable_amount == Decimal("400.00")
+    assert any(r["reason"] == "mutex" for r in result.skipped_rules)
+
+
+# ==================== 券计算集成测试 ====================
+
+def test_coupon_integration():
+    """促销 + 券完整集成测试"""
+    cart = Cart()
+    cart.add_item(CartItem(sku="D001", price=Decimal("400.00"), quantity=1))
+
+    rule = Rule.percentage_discount(percentage=80, promotion_code="DISCOUNT80")
+    coupon = UsedCoupon(
+        code="SAVE50",
+        coupon_type="full_reduction",
+        discount_value=Decimal("50"),
+        min_order_amount=Decimal("0"),
+        priority=10,
+    )
+
+    # 促销先，券后
+    result = Engine().calculate(
+        CalculationContext(
+            cart_items=cart.items,
+            used_coupons=[coupon],
+            calculation_order=["promotions", "coupons"],
+        ),
+        [rule],
+    )
+    # 促销 8 折: 400 * 0.2 = 80; 券: 50; 应付 = 400 - 80 - 50 = 270
+    assert result.total_discount == Decimal("80.00")
+    assert result.coupon_discount == Decimal("50")
+    assert result.payable_amount == Decimal("270.00")
+
+
+def test_coupon_tiered():
+    """阶梯券集成测试"""
+    cart = Cart()
+    cart.add_item(CartItem(sku="T001", price=Decimal("600.00"), quantity=1))
+
+    coupon = UsedCoupon(
+        code="TIERED",
+        coupon_type="tiered",
+        tiered_rules=[{"threshold": 300, "discount": 30}, {"threshold": 500, "discount": 60}],
+    )
+
+    result = Engine().calculate(
+        CalculationContext(cart_items=cart.items, used_coupons=[coupon]),
+        [],
+    )
+    # 600 >= 500, tiers = 1, discount = 60
+    assert result.coupon_discount == Decimal("60.00")
+    assert result.payable_amount == Decimal("540.00")

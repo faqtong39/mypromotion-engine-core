@@ -8,10 +8,12 @@
 4. 计算优惠金额
 5. 汇总结果
 """
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from itertools import groupby
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from .coupon_calculation import CouponUsageCalculator
 from .mutex import MutexCheckResult, MutexChecker
 from .plugins.base import PluginManager
 from .types import (
@@ -191,8 +193,8 @@ class PromotionEngine:
 
         self.mutex_checker.reset()
 
-        # 按优先级排序
-        sorted_rules = sorted(rules, key=lambda r: (-r.priority, r.promotion_code))
+        # 按优先级排序（含单向互斥拓扑排序）
+        sorted_rules = self._apply_mutex_priority_order(rules)
 
         # 范围预筛
         sorted_rules = self._pre_filter_by_scope(sorted_rules, remaining_items)
@@ -341,7 +343,10 @@ class PromotionEngine:
                 coupon_discount, used_coupon_details = self._calculate_coupons(context)
             payable_amount = promotion_payable - coupon_discount
 
-        payable_amount = max(payable_amount, Decimal("0"))
+        shipping_fee = getattr(context, "shipping_fee", Decimal("0"))
+        has_free_shipping = any(p.free_shipping for p in applied_results)
+        effective_shipping_fee = Decimal("0") if has_free_shipping else shipping_fee
+        payable_amount = max(payable_amount, Decimal("0")) + effective_shipping_fee
 
         return CalculationResult(
             applied_promotions=applied_results,
@@ -351,6 +356,7 @@ class PromotionEngine:
             skipped_rules=skipped_rules,
             coupon_discount=coupon_discount,
             used_coupons=used_coupon_details,
+            shipping_fee=effective_shipping_fee,
         )
 
     def _apply_rule(self, rule: Rule, context: CalculationContext, items: List[CartItem]) -> Optional[PromotionResult]:
@@ -364,10 +370,14 @@ class PromotionEngine:
         tier_details = []
         has_free_shipping = False
         action_messages = []
+        total_amount = sum(item.total_amount for item in items)
 
         for action in actions:
             discount, rewards, message = self.discount_calculator.calculate(action, items, context)
             total_discount += discount
+            # 多个 action 的累计折扣不得超过商品总金额
+            if total_discount > total_amount:
+                total_discount = total_amount
 
             if message:
                 action_messages.append({"action_type": action.action_type, "message": message, "config": action.config})
@@ -393,6 +403,67 @@ class PromotionEngine:
             free_shipping=has_free_shipping,
             refund_config=rule.refund_config,
         )
+
+    def _apply_mutex_priority_order(self, rules: List[Rule]) -> List[Rule]:
+        """
+        应用互斥优先级顺序（单向互斥拓扑排序）
+
+        双向互斥：按优先级排序（默认行为）
+        单向互斥：强制按指定顺序排序（A优先则A在前，忽略优先级）
+        """
+        if not rules or not self.mutex_checker.special_mutex_rules:
+            return sorted(rules, key=lambda r: (-r.priority, r.promotion_code))
+
+        now = datetime.now()
+        rule_codes = {getattr(r, "promotion_code", None) for r in rules if getattr(r, "promotion_code", None)}
+
+        # 筛选与当前规则相关的单向互斥规则
+        priority_order = {}
+        for mr in self.mutex_checker.special_mutex_rules:
+            if getattr(mr, "is_bidirectional", True):
+                continue
+            if not getattr(mr, "is_active", True):
+                continue
+            valid_from = getattr(mr, "valid_from", None)
+            valid_to = getattr(mr, "valid_to", None)
+            if valid_from and now < valid_from:
+                continue
+            if valid_to and now > valid_to:
+                continue
+
+            rule_a_id = getattr(mr, "rule_a_id", "")
+            rule_b_id = getattr(mr, "rule_b_id", "")
+
+            if rule_a_id not in rule_codes and rule_b_id not in rule_codes:
+                continue
+
+            priority_direction = getattr(mr, "priority_direction", "a")
+            if priority_direction == "a":
+                # A优先：A应该先检查，B后检查
+                priority_order[rule_b_id] = rule_a_id
+            else:
+                # B优先：B应该先检查，A后检查
+                priority_order[rule_a_id] = rule_b_id
+
+        if not priority_order:
+            return sorted(rules, key=lambda r: (-r.priority, r.promotion_code))
+
+        def get_sort_key(rule):
+            code = getattr(rule, "promotion_code", "")
+            if code not in priority_order:
+                # 没有单向互斥关系的，按优先级排序（权重0）
+                return (0, -rule.priority, code)
+
+            # 有单向互斥关系的
+            is_priority_rule = code in priority_order.values()
+            if is_priority_rule:
+                # 优先规则（应该先检查的）：排在最前面（权重-1）
+                return (-1, -rule.priority, code)
+            else:
+                # 非优先规则（应该后检查的）：排在后面（权重1）
+                return (1, -rule.priority, code)
+
+        return sorted(rules, key=get_sort_key)
 
     def _pre_filter_by_scope(self, rules: List[Rule], items: List[CartItem]) -> List[Rule]:
         """基于范围配置快速排除明显不匹配的规则"""
@@ -431,44 +502,22 @@ class PromotionEngine:
         return candidates
 
     def _calculate_coupons(self, context: CalculationContext) -> Tuple[Decimal, List[Dict]]:
-        """简化版券抵扣计算（纯内存，无外部依赖）"""
-        total_discount = Decimal("0")
+        """完整版券抵扣计算（支持5种券类型 + 组合规则过滤）"""
+        calc = CouponUsageCalculator()
+        total_discount, details = calc.calculate(
+            promotion_payable=context.current_payable_amount,
+            used_coupons=context.used_coupons,
+        )
+        # 转换为引擎内部统一格式
         used_details = []
-        payable = context.current_payable_amount
-
-        # 按优先级排序券
-        coupons = sorted(context.used_coupons, key=lambda c: c.priority, reverse=True)
-
-        for coupon in coupons:
-            if payable <= 0:
-                break
-
-            min_order = coupon.min_order_amount or Decimal("0")
-            if payable < min_order:
-                continue
-
-            discount = Decimal("0")
-            ctype = coupon.coupon_type
-            if ctype in ("full_reduction", "fixed_amount"):
-                discount = coupon.discount_value or Decimal("0")
-            elif ctype in ("percentage_discount", "percentage"):
-                rate = (coupon.discount_value or Decimal("0")) / Decimal("100")
-                discount = payable * rate
-            elif ctype == "no_threshold":
-                discount = coupon.discount_value or Decimal("0")
-
-            discount = min(discount, payable)
-            discount = discount.quantize(Decimal("0.01"))
-
-            if discount > 0:
-                total_discount += discount
-                payable -= discount
-                used_details.append({
-                    "code": coupon.code,
-                    "coupon_type": coupon.coupon_type,
-                    "discount": str(discount),
-                })
-
+        for d in details:
+            used_details.append({
+                "code": d.get("code", ""),
+                "coupon_type": d.get("coupon_type", ""),
+                "discount": d.get("deducted_amount", "0"),
+                "status": d.get("status", ""),
+                "message": d.get("message", ""),
+            })
         return total_discount, used_details
 
     def get_calculation_details(self) -> dict:
@@ -481,3 +530,25 @@ class PromotionEngine:
                 "scopes": self.plugin_manager.get_available_scopes(),
             },
         }
+
+    def get_available_plugins(self) -> Dict:
+        """获取所有可用的插件列表"""
+        return {
+            "conditions": self.plugin_manager.get_available_conditions(),
+            "actions": self.plugin_manager.get_available_actions(),
+            "scopes": self.plugin_manager.get_available_scopes(),
+        }
+
+    def has_plugin_for(self, plugin_type: str, code: str) -> bool:
+        """检查是否有指定类型的插件"""
+        if plugin_type == "condition":
+            return self.plugin_manager.has_condition_plugin(code)
+        elif plugin_type == "action":
+            return self.plugin_manager.has_action_plugin(code)
+        elif plugin_type == "scope":
+            return self.plugin_manager.has_scope_plugin(code)
+        return False
+
+    def force_refresh_config(self) -> None:
+        """强制刷新所有配置（重置互斥检查器状态）"""
+        self.mutex_checker.reset()

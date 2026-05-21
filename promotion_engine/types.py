@@ -25,6 +25,16 @@ class CartItem:
     member_price: Optional[Decimal] = None
     vip_price: Optional[Decimal] = None
 
+    def __post_init__(self):
+        from decimal import Decimal as D
+        self.price = D(str(self.price))
+        if self.cost_price is not None:
+            self.cost_price = D(str(self.cost_price))
+        if self.member_price is not None:
+            self.member_price = D(str(self.member_price))
+        if self.vip_price is not None:
+            self.vip_price = D(str(self.vip_price))
+
     @property
     def total_amount(self) -> Decimal:
         return (self.price * self.quantity).quantize(Decimal("0.01"))
@@ -390,6 +400,7 @@ class CalculationResult:
     skipped_rules: List[Dict] = field(default_factory=list)
     coupon_discount: Decimal = field(default_factory=lambda: Decimal("0"))
     used_coupons: List[Dict] = field(default_factory=list)
+    shipping_fee: Decimal = field(default_factory=lambda: Decimal("0"))
     # 价格保护冲突信息
     price_protection_conflicts: List[Dict] = field(default_factory=list)
     price_protection_can_proceed: bool = True

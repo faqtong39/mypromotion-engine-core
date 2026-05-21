@@ -202,3 +202,146 @@ class PluginManager:
 
     def get_available_scopes(self) -> List[Dict]:
         return [cls.get_metadata() for cls in self._scope_plugins.values()]
+
+
+class ConfigDrivenCondition(ConditionPlugin):
+    """
+    配置驱动的条件插件
+
+    通过 JSON 配置定义简单比较逻辑，无需编写代码。
+    支持的比较操作: eq, ne, gt, gte, lt, lte, in, contains
+    """
+    code = "_config_driven_condition"
+    name = "配置驱动条件"
+    config_drivable = True
+    config_schema = {
+        "type": "object",
+        "required": ["field", "operator", "value"],
+        "properties": {
+            "field": {"type": "string", "description": "字段路径，如 context.user_group"},
+            "operator": {
+                "type": "string",
+                "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "in", "contains"],
+            },
+            "value": {"description": "比较值"},
+            "default_result": {"type": "boolean", "default": False},
+        },
+    }
+
+    def check(self, config: Dict, context: Any, items: List) -> PluginResult:
+        field_path = config.get("field", "")
+        operator = config.get("operator", "eq")
+        compare_value = config.get("value")
+        default_result = config.get("default_result", False)
+
+        actual_value = self._get_field_value(field_path, context, items)
+        if actual_value is None:
+            return PluginResult(
+                success=default_result,
+                message=f"字段 {field_path} 不存在，使用默认值",
+            )
+
+        result = self._compare(actual_value, operator, compare_value)
+        return PluginResult(
+            success=result,
+            data={"field": field_path, "actual": actual_value, "expected": compare_value},
+        )
+
+    def _get_field_value(self, field_path: str, context: Any, items: List) -> Any:
+        if field_path.startswith("context."):
+            attr = field_path[8:]
+            return getattr(context, attr, None)
+        elif field_path == "items.total_amount":
+            return sum(item.total_amount for item in items)
+        elif field_path == "items.total_quantity":
+            return sum(item.quantity for item in items)
+        elif field_path == "items.count":
+            return len(items)
+        return None
+
+    def _compare(self, actual: Any, operator: str, expected: Any) -> bool:
+        try:
+            if operator == "eq":
+                return actual == expected
+            elif operator == "ne":
+                return actual != expected
+            elif operator == "gt":
+                return actual > expected
+            elif operator == "gte":
+                return actual >= expected
+            elif operator == "lt":
+                return actual < expected
+            elif operator == "lte":
+                return actual <= expected
+            elif operator == "in":
+                return actual in expected
+            elif operator == "contains":
+                return expected in actual
+        except Exception:
+            return False
+        return False
+
+
+class ConfigDrivenAction(ActionPlugin):
+    """
+    配置驱动的动作插件
+
+    通过 JSON 配置定义简单优惠计算，无需编写代码。
+    支持的计算类型: fixed, percentage, formula
+    """
+    code = "_config_driven_action"
+    name = "配置驱动动作"
+    config_drivable = True
+    config_schema = {
+        "type": "object",
+        "required": ["calculation_type"],
+        "properties": {
+            "calculation_type": {
+                "type": "string",
+                "enum": ["fixed", "percentage", "formula"],
+            },
+            "value": {"type": "number", "description": "固定值或百分比"},
+            "formula": {"type": "string", "description": "公式表达式"},
+        },
+    }
+
+    def calculate(self, config: Dict, items: List, context: Any) -> PluginResult:
+        calc_type = config.get("calculation_type")
+        total_amount = sum(item.total_amount for item in items)
+        discount = Decimal("0")
+
+        if calc_type == "fixed":
+            discount = Decimal(str(config.get("value", 0)))
+        elif calc_type == "percentage":
+            rate = Decimal(str(config.get("value", 0)))
+            discount = total_amount * rate / Decimal("100")
+        elif calc_type == "formula":
+            formula = config.get("formula", "0")
+            discount = self._safe_eval(formula, {
+                "total": total_amount,
+                "quantity": sum(item.quantity for item in items),
+            })
+
+        discount = self.apply_limits(discount, total_amount)
+        return PluginResult(
+            success=True,
+            data={"discount": discount, "rewards": []},
+        )
+
+    def _safe_eval(self, formula: str, variables: Dict) -> Decimal:
+        try:
+            allowed_chars = set("0123456789.+-*/() ")
+            for var_name in variables:
+                allowed_chars.add(var_name)
+
+            expr = formula
+            for var_name, var_value in variables.items():
+                expr = expr.replace(var_name, str(var_value))
+
+            if not all(c in allowed_chars for c in expr):
+                return Decimal("0")
+
+            result = eval(expr, {"__builtins__": {}}, {})
+            return Decimal(str(result))
+        except Exception:
+            return Decimal("0")

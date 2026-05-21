@@ -105,6 +105,9 @@ class TieredPriceAction(ActionPlugin):
         return True
 
     def _get_price(self, tier: Dict, avg_price: Decimal) -> Decimal:
+        if "amount" in tier:
+            reduction = Decimal(str(tier.get("amount", 0)))
+            return max(avg_price - reduction, Decimal("0"))
         if "price" in tier:
             return Decimal(str(tier.get("price", 0)))
         elif "discount_rate" in tier:

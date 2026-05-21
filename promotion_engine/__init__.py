@@ -31,6 +31,7 @@ from .types import (
     SpecialMutexRule,
 )
 from .engine import PromotionEngine as Engine
+from .coupon_calculation import CouponUsageCalculator
 
 __all__ = [
     "Engine",
@@ -46,6 +47,7 @@ __all__ = [
     "UsedCoupon",
     "MutexGroup",
     "SpecialMutexRule",
+    "CouponUsageCalculator",
 ]
 
 __version__ = "0.1.0"

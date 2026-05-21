@@ -62,6 +62,23 @@ class RuleInput(BaseModel):
     stack_config: dict = {}
 
 
+class MutexGroupInput(BaseModel):
+    code: str
+    name: str = ""
+    strategies: list = []
+    rule_ids: list = []
+    is_active: bool = True
+
+
+class SpecialMutexRuleInput(BaseModel):
+    name: str = ""
+    rule_a_id: str = ""
+    rule_b_id: str = ""
+    is_bidirectional: bool = True
+    priority_direction: str = "a"
+    is_active: bool = True
+
+
 class CalculateRequest(BaseModel):
     cart_items: list[CartItemInput]
     rules: list[RuleInput]
@@ -69,10 +86,20 @@ class CalculateRequest(BaseModel):
     calculation_order: str = "promotions-first"
     shipping_fee: str = "0"
     user_group: str = ""
+    mutex_groups: list[MutexGroupInput] = []
+    special_mutex_rules: list[SpecialMutexRuleInput] = []
 
 
 def _to_decimal(value) -> Decimal:
-    return Decimal(str(value)) if value is not None else Decimal("0")
+    if value is None:
+        return Decimal("0")
+    s = str(value).strip()
+    if not s:
+        return Decimal("0")
+    try:
+        return Decimal(s)
+    except Exception:
+        return Decimal("0")
 
 
 @app.post("/api/calculate")
@@ -89,9 +116,32 @@ def calculate(req: CalculateRequest):
 
     rules = []
     for r in req.rules:
-        conditions = [RuleCondition(**c) for c in r.conditions]
-        actions = [RuleAction(**a) for a in r.actions]
-        scopes = [RuleScope(**s) for s in r.scopes]
+        conditions = []
+        for c in r.conditions:
+            cond_type = c.get("condition_type", "")
+            config = dict(c.get("config", {}))
+            # 兼容扁平化参数（如 operator/value）自动合并到 config
+            for key in ("operator", "value", "amount", "quantity", "group", "days"):
+                if key in c and key not in config:
+                    config[key] = c[key]
+            conditions.append(RuleCondition(condition_type=cond_type, config=config))
+        actions = []
+        for a in r.actions:
+            act_type = a.get("action_type", "")
+            config = dict(a.get("config", {}))
+            # 兼容扁平化参数自动合并到 config
+            for key in ("amount", "price", "percentage", "points", "tiers", "deposit", "expansion_ratio", "max_discount"):
+                if key in a and key not in config:
+                    config[key] = a[key]
+            actions.append(RuleAction(action_type=act_type, config=config))
+        scopes = []
+        for s in r.scopes:
+            scope_type = s.get("scope_type", "")
+            config = dict(s.get("config", {}))
+            for key in ("skus", "category_ids", "tags", "except_skus"):
+                if key in s and key not in config:
+                    config[key] = s[key]
+            scopes.append(RuleScope(scope_type=scope_type, config=config))
         rules.append(Rule(
             promotion_code=r.promotion_code or r.strategy_type,
             strategy_type=r.strategy_type,
@@ -127,7 +177,34 @@ def calculate(req: CalculateRequest):
         used_coupons=used_coupons,
     )
 
-    engine = Engine()
+    from promotion_engine.types import MutexGroup, SpecialMutexRule
+
+    mutex_groups = {}
+    for mg in req.mutex_groups:
+        code = mg.code or ""
+        mutex_groups[code] = {
+            "name": mg.name or code,
+            "strategies": mg.strategies or [],
+            "rule_ids": mg.rule_ids or [],
+            "is_active": mg.is_active,
+        }
+
+    special_rules = []
+    for sm in req.special_mutex_rules:
+        special_rules.append(SpecialMutexRule(
+            name=sm.name or "",
+            rule_a_id=sm.rule_a_id or "",
+            rule_b_id=sm.rule_b_id or "",
+            is_bidirectional=sm.is_bidirectional,
+            priority_direction=sm.priority_direction or "a",
+            is_active=sm.is_active,
+        ))
+
+    engine = Engine(
+        calculation_order=calculation_order,
+        mutex_groups=mutex_groups if mutex_groups else None,
+        special_mutex_rules=special_rules if special_rules else None,
+    )
     result = engine.calculate(context, rules)
 
     def decimal_default(obj):
@@ -157,6 +234,7 @@ def calculate(req: CalculateRequest):
             "original_amount": result.original_amount,
             "total_discount": result.total_discount,
             "coupon_discount": result.coupon_discount,
+            "shipping_fee": result.shipping_fee,
             "payable_amount": result.payable_amount,
         },
     }, default=decimal_default))

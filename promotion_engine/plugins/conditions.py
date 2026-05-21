@@ -49,8 +49,13 @@ class QtyThresholdCondition(ConditionPlugin):
     }
 
     def check(self, config: Dict, context: Any, items: List) -> PluginResult:
-        qty = config.get("quantity") or 0
-        threshold = int(qty) if isinstance(qty, (int, float)) else 0
+        qty = config.get("quantity")
+        if qty is None:
+            qty = config.get("min_quantity", 0)
+        try:
+            threshold = int(float(qty)) if qty is not None else 0
+        except (ValueError, TypeError):
+            threshold = 0
         total = sum(item.quantity for item in items)
         return PluginResult(
             success=total >= threshold,
@@ -137,13 +142,24 @@ class TimeWindowCondition(ConditionPlugin):
         },
     }
 
+    @staticmethod
+    def _parse_iso_datetime(dt_str: str) -> datetime:
+        """兼容 Python 3.9 的 ISO 时间解析（支持 Z 后缀）"""
+        s = dt_str.strip()
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        return datetime.fromisoformat(s)
+
     def check(self, config: Dict, context: Any, items: List) -> PluginResult:
         start_time_str = config.get("start_time")
         end_time_str = config.get("end_time")
-        current = context.current_time if hasattr(context, "current_time") else datetime.now()
+        current = getattr(context, "current_time", None) or datetime.now()
 
         if start_time_str:
-            start_dt = datetime.fromisoformat(start_time_str)
+            try:
+                start_dt = self._parse_iso_datetime(start_time_str)
+            except ValueError:
+                return PluginResult(success=False, data={}, message=f"开始时间格式错误: {start_time_str}")
             if current.tzinfo is not None and start_dt.tzinfo is None:
                 from datetime import timezone
                 start_dt = start_dt.replace(tzinfo=timezone.utc)
@@ -157,7 +173,10 @@ class TimeWindowCondition(ConditionPlugin):
                 )
 
         if end_time_str:
-            end_dt = datetime.fromisoformat(end_time_str)
+            try:
+                end_dt = self._parse_iso_datetime(end_time_str)
+            except ValueError:
+                return PluginResult(success=False, data={}, message=f"结束时间格式错误: {end_time_str}")
             if current.tzinfo is not None and end_dt.tzinfo is None:
                 from datetime import timezone
                 end_dt = end_dt.replace(tzinfo=timezone.utc)
@@ -193,7 +212,7 @@ class DayOfWeekCondition(ConditionPlugin):
             elif isinstance(d, str) and d.strip().isdigit():
                 allowed_days.append(int(d.strip()))
 
-        current = context.current_time if hasattr(context, "current_time") else datetime.now()
+        current = getattr(context, "current_time", None) or datetime.now()
         current_weekday = current.weekday()
         day_mapping = {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 0}
         current_day = day_mapping[current_weekday]
@@ -242,7 +261,7 @@ class MonthlyDateCondition(ConditionPlugin):
                 success=False, data={"dates": allowed_dates}, message="配置错误: 未指定有效的日期列表"
             )
 
-        current = context.current_time if hasattr(context, "current_time") else datetime.now()
+        current = getattr(context, "current_time", None) or datetime.now()
         current_date = current.date() if hasattr(current, "date") else current
         current_day = current_date.day
 
@@ -370,3 +389,135 @@ class UserBirthdayCondition(ConditionPlugin):
             )
         except (ValueError, TypeError) as e:
             return PluginResult(success=False, data={}, message=f"生日格式错误: {e}")
+
+
+class YearlyDateCondition(ConditionPlugin):
+    """每年固定日期条件 - 每年指定日期生效，如双11、双12、元旦等"""
+    code = "yearly_date"
+    name = "每年固定日期"
+    description = "每年指定日期生效，如双11、双12、元旦等"
+    config_schema = {
+        "type": "object",
+        "properties": {
+            "month": {"type": "integer", "description": "月份（1-12）"},
+            "day": {"type": "integer", "description": "日期（1-31）"},
+            "duration_days": {"type": "integer", "default": 1, "description": "促销持续天数，默认为1天"},
+            "start_year": {"type": "integer", "description": "开始年份（如2026）"},
+            "end_year": {"type": "integer", "description": "结束年份（如2030）"},
+        },
+    }
+
+    def check(self, config: Dict, context: Any, items: List) -> PluginResult:
+        from datetime import date, timedelta
+        from calendar import monthrange
+
+        target_month = config.get("month")
+        target_day = config.get("day")
+        duration_days = config.get("duration_days", 1)
+        start_year = config.get("start_year")
+        end_year = config.get("end_year")
+
+        def _to_int(val):
+            if isinstance(val, int):
+                return val
+            if isinstance(val, str) and val.strip().isdigit():
+                return int(val.strip())
+            return val
+
+        target_month = _to_int(target_month)
+        target_day = _to_int(target_day)
+        duration_days = _to_int(duration_days)
+        if start_year is not None:
+            start_year = _to_int(start_year)
+        if end_year is not None:
+            end_year = _to_int(end_year)
+
+        if target_month is None or target_day is None:
+            return PluginResult(
+                success=False,
+                data={"month": target_month, "day": target_day},
+                message="配置错误: 必须指定month和day",
+            )
+
+        if not isinstance(target_month, int) or not (1 <= target_month <= 12):
+            return PluginResult(
+                success=False,
+                data={"month": target_month},
+                message=f"配置错误: month必须是1-12之间的整数，当前为{target_month}",
+            )
+
+        if not isinstance(target_day, int) or not (1 <= target_day <= 31):
+            return PluginResult(
+                success=False,
+                data={"day": target_day},
+                message=f"配置错误: day必须是1-31之间的整数，当前为{target_day}",
+            )
+
+        if not isinstance(duration_days, int) or duration_days < 1:
+            return PluginResult(
+                success=False,
+                data={"duration_days": duration_days},
+                message=f"配置错误: duration_days必须是正整数，当前为{duration_days}",
+            )
+
+        current = getattr(context, "current_time", None) or datetime.now()
+        current_date = current.date() if hasattr(current, "date") else current
+
+        # 检查年份范围
+        if start_year and current_date.year < start_year:
+            return PluginResult(
+                success=False,
+                data={"current_year": current_date.year, "start_year": start_year},
+                message=f"当前年份{current_date.year}早于开始年份{start_year}",
+            )
+
+        if end_year and current_date.year > end_year:
+            return PluginResult(
+                success=False,
+                data={"current_year": current_date.year, "end_year": end_year},
+                message=f"当前年份{current_date.year}晚于结束年份{end_year}",
+            )
+
+        # 计算今年促销的开始和结束日期
+        try:
+            promo_start = date(current_date.year, target_month, target_day)
+        except ValueError:
+            last_day = monthrange(current_date.year, target_month)[1]
+            target_day = min(target_day, last_day)
+            promo_start = date(current_date.year, target_month, target_day)
+
+        promo_end = promo_start + timedelta(days=duration_days - 1)
+
+        # 检查当前日期是否在促销期间
+        if current_date < promo_start:
+            return PluginResult(
+                success=False,
+                data={
+                    "current_date": str(current_date),
+                    "promo_start": str(promo_start),
+                    "promo_end": str(promo_end),
+                },
+                message=f"促销尚未开始，开始日期: {promo_start}",
+            )
+
+        if current_date > promo_end:
+            return PluginResult(
+                success=False,
+                data={
+                    "current_date": str(current_date),
+                    "promo_start": str(promo_start),
+                    "promo_end": str(promo_end),
+                },
+                message=f"促销已结束，结束日期: {promo_end}",
+            )
+
+        return PluginResult(
+            success=True,
+            data={
+                "current_date": str(current_date),
+                "promo_start": str(promo_start),
+                "promo_end": str(promo_end),
+                "day_of_promo": (current_date - promo_start).days + 1,
+            },
+            message=f"今天是促销第{(current_date - promo_start).days + 1}天，促销期间: {promo_start} 至 {promo_end}",
+        )

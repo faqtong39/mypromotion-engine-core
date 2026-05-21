@@ -112,7 +112,7 @@ class MutexChecker:
 
         # 4. 检查策略类型互斥组
         if not stack_config.get("ignore_mutex_groups", False):
-            group_check = self._check_group_mutex(strategy_type)
+            group_check = self._check_group_mutex(strategy_type, rule_id)
             if group_check:
                 group_name = self.mutex_groups.get(group_check, {}).get("name", group_check)
                 return MutexCheckInfo(
@@ -134,15 +134,20 @@ class MutexChecker:
             message=f"规则 {rule_code} 允许应用",
         )
 
-    def _check_group_mutex(self, strategy_type: Optional[str]) -> Optional[str]:
-        """检查策略类型是否在已使用的互斥组中"""
-        if not strategy_type:
+    def _check_group_mutex(self, strategy_type: Optional[str] = None, rule_id: Optional[str] = None) -> Optional[str]:
+        """检查策略类型或规则名称是否在已使用的互斥组中"""
+        if not strategy_type and not rule_id:
             return None
         for group_code, group_config in self.mutex_groups.items():
             strategies = group_config.get("strategies", [])
-            if strategy_type in strategies:
-                if group_code in self.used_groups:
-                    return group_code
+            rule_ids = group_config.get("rule_ids", [])
+            matched = False
+            if strategy_type and strategy_type in strategies:
+                matched = True
+            if rule_id and rule_id in rule_ids:
+                matched = True
+            if matched and group_code in self.used_groups:
+                return group_code
         return None
 
     def _check_stack_config(
@@ -278,10 +283,16 @@ class MutexChecker:
         if rule_id:
             self.applied_rule_ids.append(rule_id)
 
-        if strategy_type:
-            for group_code, group_config in self.mutex_groups.items():
-                if strategy_type in group_config.get("strategies", []):
-                    self.used_groups.add(group_code)
+        for group_code, group_config in self.mutex_groups.items():
+            strategies = group_config.get("strategies", [])
+            rule_ids = group_config.get("rule_ids", [])
+            matched = False
+            if strategy_type and strategy_type in strategies:
+                matched = True
+            if rule_id and rule_id in rule_ids:
+                matched = True
+            if matched:
+                self.used_groups.add(group_code)
 
     def get_applied_summary(self) -> Dict[str, Any]:
         """获取已应用规则的汇总信息"""

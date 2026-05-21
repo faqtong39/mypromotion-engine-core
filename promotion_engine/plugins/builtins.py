@@ -21,6 +21,12 @@ def register_builtin_plugins(manager):
     manager.register_condition(conditions.PaymentMethodCondition)
     manager.register_condition(conditions.ComboItemsCondition)
     manager.register_condition(conditions.UserBirthdayCondition)
+    manager.register_condition(conditions.YearlyDateCondition)
+
+    # 配置驱动插件（通用扩展）
+    from .base import ConfigDrivenCondition, ConfigDrivenAction
+    manager.register_condition(ConfigDrivenCondition)
+    manager.register_action(ConfigDrivenAction)
 
     # 动作插件（12个）
     manager.register_action(actions.FixedAmountAction)

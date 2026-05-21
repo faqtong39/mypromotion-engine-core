@@ -9,29 +9,36 @@
     --primary: #2563eb; --primary-light: #eff6ff; --success: #16a34a; --warning: #f59e0b; --danger: #ef4444;
     --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-300: #d1d5db; --gray-400: #9ca3af;
     --gray-500: #6b7280; --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
-    --radius: 8px;
+    --radius: 8px; --radius-lg: 12px;
     --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.04);
     --shadow: 0 1px 3px 0 rgba(0,0,0,0.08), 0 4px 12px -2px rgba(0,0,0,0.04);
     --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.02);
+    --shadow-xl: 0 20px 40px -10px rgba(0,0,0,0.12);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: #f5f7fa; color: var(--gray-800); line-height: 1.5; font-size: 14px;
   }
-  .app { max-width: 1440px; margin: 0 auto; padding: 24px; min-height: 100vh; }
-  header { margin-bottom: 24px; }
-  header h1 { font-size: 22px; font-weight: 600; color: var(--gray-900); display: flex; align-items: center; gap: 10px; }
-  header p { color: var(--gray-500); font-size: 13px; margin-top: 4px; }
-  .main-grid { display: grid; grid-template-columns: 480px 1fr; gap: 24px; align-items: start; }
-  @media (max-width: 1100px) { .main-grid { grid-template-columns: 1fr; } }
-  .card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
-  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--gray-100); }
+  .app { max-width: 1440px; margin: 0 auto; padding: 20px; min-height: 100vh; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-200);
+  }
+  header h1 { font-size: 20px; font-weight: 600; color: var(--gray-900); display: flex; align-items: center; gap: 10px; }
+  header p { color: var(--gray-500); font-size: 12px; margin-top: 2px; }
+  .lang-switch { display: flex; gap: 6px; }
+  .lang-switch .btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .main-grid { display: grid; grid-template-columns: 400px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
+  .card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--gray-100); }
   .card-title { font-size: 14px; font-weight: 600; color: var(--gray-700); display: flex; align-items: center; gap: 8px; }
-  .card-body { padding: 16px 20px; }
+  .card-body { padding: 14px 16px; }
   .btn {
-    display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 6px;
-    border: 1px solid transparent; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    padding: 6px 12px; border-radius: 6px; border: 1px solid transparent;
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
     background: #fff; color: var(--gray-600);
   }
   .btn:hover { background: var(--gray-50); }
@@ -42,9 +49,8 @@
   .btn-ghost { border-color: var(--gray-200); color: var(--gray-500); }
   .btn-ghost:hover { border-color: var(--gray-300); color: var(--gray-700); }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
-  .btn-block { width: 100%; justify-content: center; padding: 10px; font-size: 14px; }
-  .form-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-  .form-row:last-child { margin-bottom: 0; }
+  .btn-block { width: 100%; padding: 10px; font-size: 14px; }
+  .btn-lg { padding: 12px 20px; font-size: 15px; }
   input, select {
     height: 34px; padding: 0 10px; border: 1px solid var(--gray-200); border-radius: 6px;
     font-size: 13px; color: var(--gray-800); background: #fff; outline: none;
@@ -54,208 +60,401 @@
   input::placeholder { color: var(--gray-400); }
   select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239ca3af' stroke-width='1.5' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
   label { font-size: 12px; color: var(--gray-500); white-space: nowrap; min-width: 48px; }
-  .item-row { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
-  .item-row:last-child { border-bottom: none; padding-bottom: 0; }
-  .item-row:first-child { padding-top: 0; }
-  .rule-card { border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; background: var(--gray-50); }
+  .form-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+
+  /* 规则卡片 */
+  .rule-card { border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; background: var(--gray-50); }
   .rule-card:last-child { margin-bottom: 0; }
-  .rule-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-200); }
-  .rule-header .rule-title { font-weight: 600; font-size: 14px; color: var(--gray-800); flex: 1; }
-  .rule-header .rule-priority-tag {
+  .rule-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--gray-200); justify-content: space-between; }
+  .rule-header .rule-title { font-weight: 600; font-size: 14px; color: var(--gray-800); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rule-priority-tag {
     font-size: 11px; color: var(--gray-500); background: #fff; padding: 2px 8px;
     border-radius: 4px; border: 1px solid var(--gray-200);
   }
-  .rule-section { margin-bottom: 10px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid var(--gray-100); }
-  .rule-section-title { font-size: 12px; color: var(--gray-500); margin-bottom: 8px; font-weight: 500; }
+  .rule-section { margin-bottom: 8px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid var(--gray-100); }
+  .rule-section-title { font-size: 12px; color: var(--gray-500); margin-bottom: 6px; font-weight: 500; }
   .rule-section:last-child { margin-bottom: 0; }
-  .tiered-form { margin-top: 8px; }
+  .tiered-form { margin-top: 6px; }
   .tiered-row { margin-bottom: 6px; }
-  .summary-card { background: linear-gradient(135deg, #eff6ff 0%, #fff 100%); border: 1px solid #dbeafe; border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
-  .summary-amount { font-size: 36px; font-weight: 700; color: var(--primary); line-height: 1.2; }
-  .summary-label { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #dbeafe; }
-  .summary-item { text-align: center; }
-  .summary-item .val { font-size: 18px; font-weight: 600; color: var(--gray-700); }
-  .summary-item .lbl { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
-  .result-list { margin-top: 12px; }
-  .result-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--gray-50); border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--success); }
-  .result-item.skip { border-left-color: var(--gray-300); opacity: 0.85; }
-  .result-item.coupon { border-left-color: var(--warning); }
-  .result-meta { font-size: 12px; color: var(--gray-500); }
+  .item-row { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+  .item-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .item-row:first-child { padding-top: 0; }
+
+  /* 商品展示 */
+  .section-title { font-size: 16px; font-weight: 600; color: var(--gray-800); margin-bottom: 14px; padding-left: 4px; }
+  .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .product-card {
+    background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow);
+    padding: 14px; text-align: center; transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer; border: 2px solid transparent;
+  }
+  .product-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--primary-light); }
+  .product-image { font-size: 48px; margin-bottom: 8px; }
+  .product-name { font-size: 13px; font-weight: 500; color: var(--gray-800); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .product-price { font-size: 16px; font-weight: 700; color: var(--danger); margin-bottom: 10px; }
+  .product-card .btn { width: 100%; }
+
+  /* 购物车 */
+  .cart-panel { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 16px; }
+  .cart-panel .section-title { margin-bottom: 12px; }
+  .empty-cart { text-align: center; padding: 40px 20px; color: var(--gray-400); font-size: 13px; }
+  .cart-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+  .cart-item:last-child { border-bottom: none; }
+  .cart-item-info { flex: 1; min-width: 0; }
+  .cart-item-name { font-size: 13px; font-weight: 500; color: var(--gray-800); }
+  .cart-item-price { font-size: 12px; color: var(--gray-500); }
+  .cart-item-qty { display: flex; align-items: center; gap: 6px; }
+  .cart-item-qty span { min-width: 20px; text-align: center; font-weight: 600; }
+  .cart-item-total { font-size: 14px; font-weight: 600; color: var(--gray-700); min-width: 60px; text-align: right; }
+
+  /* 优惠券 */
+  .cart-coupons { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--gray-200); display: flex; flex-direction: row; gap: 10px; }
+  .coupon-card { flex: 1; min-width: 0; display: flex; background: #fff; border: 1px solid var(--gray-200); border-radius: 10px; overflow: hidden; transition: all .2s; position: relative; }
+  .coupon-card.active { border-color: var(--primary); box-shadow: 0 2px 8px rgba(37,99,235,0.12); }
+  .coupon-face { width: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-weight: 700; position: relative; flex-shrink: 0; }
+  .coupon-face.red { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); }
+  .coupon-face.blue { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .coupon-face .amount { font-size: 20px; line-height: 1; }
+  .coupon-face .unit { font-size: 10px; margin-top: 2px; opacity: .9; }
+  .coupon-face::after { content: ''; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; background: #fff; border-radius: 50%; }
+  .coupon-info { flex: 1; padding: 10px 12px 8px 12px; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; position: relative; }
+  .coupon-info-header { display: flex; align-items: center; justify-content: space-between; }
+  .coupon-info-header .name { font-weight: 600; font-size: 13px; color: var(--gray-800); cursor: pointer; }
+  .coupon-info-header .code { font-size: 10px; color: var(--gray-500); font-weight: 500; background: var(--gray-100); padding: 1px 6px; border-radius: 4px; }
+  .coupon-info-body { display: flex; align-items: center; gap: 8px; }
+  .coupon-info-body .field { display: flex; align-items: center; gap: 3px; font-size: 12px; color: var(--gray-600); }
+  .coupon-info-body .field input { width: 48px; padding: 3px 4px; border: 1px solid var(--gray-200); border-radius: 4px; font-size: 12px; text-align: center; box-sizing: border-box; }
+  .coupon-info-body .field input:focus { outline: none; border-color: var(--primary); }
+  .coupon-check-row { position: absolute; bottom: 8px; right: 12px; }
+  .coupon-check-row input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary); margin: 0; padding: 0; border: none; background: transparent; box-shadow: none; }
+
+  /* 购物车汇总 */
+  .cart-summary { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-200); }
+  .cart-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+  .cart-row.total { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--gray-200); }
+
+  /* 结算弹窗 */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); width: 100%; max-width: 520px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--gray-100); }
+  .modal-header h2 { font-size: 16px; font-weight: 600; color: var(--gray-800); }
+  .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--gray-100); background: var(--gray-50); }
+
+  /* 订单确认页样式 */
+  .order-section { margin-bottom: 16px; }
+  .order-section-title { font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; }
+  .order-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: var(--gray-700); }
+  .order-item .name { color: var(--gray-800); }
+  .order-item .price { font-weight: 500; }
+  .order-divider { height: 1px; background: var(--gray-100); margin: 8px 0; }
+  .order-discount { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+  .order-discount .label { color: var(--success); }
+  .order-discount .amount { color: var(--success); font-weight: 500; }
+  .order-discount.coupon .label { color: var(--warning); }
+  .order-discount.coupon .amount { color: var(--warning); }
+  .order-total { display: flex; justify-content: space-between; padding-top: 10px; margin-top: 6px; border-top: 2px solid var(--gray-200); }
+  .order-total .label { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+  .order-total .amount { font-size: 22px; font-weight: 700; color: var(--primary); }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
   .badge-green { background: #dcfce7; color: var(--success); }
   .badge-gray { background: var(--gray-100); color: var(--gray-500); }
   .badge-amber { background: #fef3c7; color: #b45309; }
-  .empty-state { text-align: center; padding: 48px 20px; color: var(--gray-400); font-size: 13px; }
-  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .applied-list { margin-top: 8px; }
+  .applied-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--gray-50); border-radius: 6px; margin-bottom: 6px; border-left: 3px solid var(--success); }
+  .applied-item.coupon-item { border-left-color: var(--warning); }
+  .applied-item.skip-item { border-left-color: var(--gray-300); opacity: 0.8; }
+  .applied-meta { font-size: 11px; color: var(--gray-500); }
+
+  /* 结果为空 */
+  .empty-state { text-align: center; padding: 36px 20px; color: var(--gray-400); font-size: 13px; }
+
+  /* 促销配置区折叠 */
+  .left-col { position: sticky; top: 20px; }
 </style>
 </head>
 <body>
 <div id="app" class="app">
   <header>
-    <h1>Promotion Engine Demo</h1>
-    <p>高精度促销计算引擎演示 | Decimal-native | 互斥感知 | 插件化</p>
+    <div>
+      <h1>{{ t.title }}</h1>
+      <p>{{ t.subtitle }}</p>
+    </div>
+    <div class="lang-switch">
+      <button class="btn btn-sm" :class="{active: lang==='zh'}" @click="lang='zh'">中文</button>
+      <button class="btn btn-sm" :class="{active: lang==='en'}" @click="lang='en'">EN</button>
+    </div>
   </header>
-  <div class="presets">
-    <button class="btn btn-ghost btn-sm" v-on:click="loadPreset('full_reduction')">满减</button>
-    <button class="btn btn-ghost btn-sm" v-on:click="loadPreset('percentage')">百分比折扣</button>
-    <button class="btn btn-ghost btn-sm" v-on:click="loadPreset('mutex')">互斥演示</button>
-    <button class="btn btn-ghost btn-sm" v-on:click="loadPreset('coupon')">促销+券</button>
-    <button class="btn btn-ghost btn-sm" v-on:click="loadPreset('optimal')">最优顺序</button>
-    <button class="btn btn-ghost btn-sm" v-on:click="loadPreset('tiered')">阶梯价</button>
-  </div>
+
   <div class="main-grid">
-    <div class="left-col">
+    <!-- 左侧：促销配置 -->
+    <aside class="left-col">
+      <!-- 促销规则 -->
       <div class="card">
-        <div class="card-header"><div class="card-title">购物车</div><button class="btn btn-primary btn-sm" v-on:click="addCartItem()">+ 添加商品</button></div>
-        <div class="card-body">
-          <div v-for="(item, index) in cartItems" v-bind:key="index" class="item-row">
-            <input v-model="item.sku" placeholder="SKU" style="flex:1.5">
-            <input v-model="item.price" type="number" placeholder="单价" style="flex:1">
-            <input v-model="item.qty" type="number" placeholder="数量" min="1" style="width:60px;flex:none">
-            <input v-model="item.categoryId" placeholder="品类" style="flex:1">
-            <button class="btn btn-danger btn-sm" v-on:click="removeCartItem(index)">删除</button>
-          </div>
+        <div class="card-header">
+          <div class="card-title">{{ t.rules }}</div>
+          <button class="btn btn-primary btn-sm" @click="addRule()">+ {{ t.addRule }}</button>
         </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">优惠券</div><button class="btn btn-primary btn-sm" v-on:click="addCoupon()">+ 添加券</button></div>
         <div class="card-body">
-          <div v-for="(cp, index) in coupons" v-bind:key="index" class="item-row">
-            <input v-model="cp.code" placeholder="券码" style="flex:1.2">
-            <select v-model="cp.type" style="flex:1">
-              <option value="fixed_amount">固定减免</option>
-              <option value="percentage">百分比折扣</option>
-            </select>
-            <input v-model="cp.value" placeholder="面值/百分比" style="width:80px;flex:none">
-            <input v-model="cp.minOrder" placeholder="最低消费" style="width:80px;flex:none">
-            <button class="btn btn-danger btn-sm" v-on:click="removeCoupon(index)">删除</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">促销规则</div><button class="btn btn-primary btn-sm" v-on:click="addRule()">+ 添加规则</button></div>
-        <div class="card-body">
-          <div v-for="(rule, index) in rules" v-bind:key="rule.id" class="rule-card">
+          <div v-for="(rule, index) in rules" :key="rule.id" class="rule-card">
             <div class="rule-header">
-              <span class="rule-title">{{ rule.name }}</span>
-              <span class="rule-priority-tag">优先级 {{ rule.priority }}</span>
-              <button class="btn btn-danger btn-sm" v-on:click="removeRule(index)">删除</button>
-            </div>
-            <div class="rule-section">
-              <div class="rule-section-title">规则条件</div>
-              <div class="form-row">
-                <select v-model="rule.condType" style="flex:1.2" v-on:change="onCondChange(rule)">
-                  <option v-for="c in COND_TYPES" v-bind:key="c.value" v-bind:value="c.value">{{ c.label }}</option>
-                </select>
-                <input v-show="condHasParam(rule.condType)" v-model="rule.condParam" v-bind:placeholder="condPlaceholder(rule.condType)" style="flex:1">
+              <span class="rule-title">{{ ACTION_TYPES.find(a => a.value === rule.actType)?.label || rule.name || t.unknownRule }}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="form-row" style="margin-bottom:0;flex:none">
+                  <label style="min-width:auto">{{ t.priority }}</label>
+                  <input v-model.number="rule.priority" type="number" min="0" max="999" style="width:60px;flex:none">
+                </div>
+                <button class="btn btn-danger btn-sm" @click="removeRule(index)">{{ t.delete }}</button>
               </div>
             </div>
             <div class="rule-section">
-              <div class="rule-section-title">规则动作</div>
+              <div class="rule-section-title">{{ t.ruleCondition }}</div>
               <div class="form-row">
-                <select v-model="rule.actType" style="flex:1.2" v-on:change="onActionChange(rule)">
-                  <option v-for="a in ACTION_TYPES" v-bind:key="a.value" v-bind:value="a.value">{{ a.label }}</option>
+                <select v-model="rule.condType" style="flex:1.2" @change="onCondChange(rule)">
+                  <option v-for="c in COND_TYPES" :key="c.value" :value="c.value">{{ c.label }}</option>
                 </select>
-                <input v-show="actHasInput(rule.actType)" v-model="rule.actParam" v-bind:placeholder="actPlaceholder(rule.actType)" style="flex:1">
+                <input v-show="condHasParam(rule.condType)" v-model="rule.condParam" :placeholder="condPlaceholder(rule.condType)" style="flex:1">
+              </div>
+            </div>
+            <div class="rule-section">
+              <div class="rule-section-title">{{ t.ruleAction }}</div>
+              <div class="form-row">
+                <select v-model="rule.actType" style="flex:1.2" @change="onActionChange(rule)">
+                  <option v-for="a in ACTION_TYPES" :key="a.value" :value="a.value">{{ a.label }}</option>
+                </select>
+                <input v-show="actHasInput(rule.actType)" v-model="rule.actParam" :placeholder="actPlaceholder(rule.actType)" style="flex:1">
               </div>
               <div v-show="isTiered(rule.actType)" class="tiered-form">
-                <div style="font-size:12px; color:var(--gray-500); margin-bottom:6px;">阶梯配置</div>
-                <div v-for="(row, idx) in rule.tieredRows" v-bind:key="idx" class="form-row tiered-row">
-                  <input v-model="row.a" type="number" v-bind:placeholder="tieredLabelA(rule.actType)" style="flex:1">
-                  <input v-model="row.b" type="number" v-bind:placeholder="tieredLabelB(rule.actType)" style="flex:1">
-                  <button class="btn btn-danger btn-sm" v-on:click="removeTieredRow(rule, idx)">删除</button>
+                <div style="font-size:12px; color:var(--gray-500); margin-bottom:6px;">{{ t.tierConfig }}</div>
+                <div v-for="(row, idx) in rule.tieredRows" :key="idx" class="form-row tiered-row">
+                  <input v-model="row.a" type="number" :placeholder="tieredLabelA(rule.actType)" style="flex:1">
+                  <input v-model="row.b" type="number" :placeholder="tieredLabelB(rule.actType)" style="flex:1">
+                  <button class="btn btn-danger btn-sm" @click="removeTieredRow(rule, idx)">{{ t.delete }}</button>
                 </div>
-                <button class="btn btn-ghost btn-sm" style="margin-top:6px;" v-on:click="addTieredRow(rule)">+ 添加层级</button>
+                <button class="btn btn-ghost btn-sm" style="margin-top:6px;" @click="addTieredRow(rule)">+ {{ t.addTier }}</button>
               </div>
             </div>
             <div class="rule-section">
-              <div class="rule-section-title">作用范围</div>
+              <div class="rule-section-title">{{ t.scope }}</div>
               <div class="form-row">
-                <select v-model="rule.scopeType" style="flex:1.2" v-on:change="onScopeChange(rule)">
-                  <option v-for="s in SCOPE_TYPES" v-bind:key="s.value" v-bind:value="s.value">{{ s.label }}</option>
+                <select v-model="rule.scopeType" style="flex:1.2" @change="onScopeChange(rule)">
+                  <option v-for="s in SCOPE_TYPES" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
-                <input v-show="scopeHasParam(rule.scopeType)" v-model="rule.scopeParam" v-bind:placeholder="scopePlaceholder(rule.scopeType)" style="flex:1">
+                <input v-show="scopeHasParam(rule.scopeType)" v-model="rule.scopeParam" :placeholder="scopePlaceholder(rule.scopeType)" style="flex:1">
               </div>
             </div>
           </div>
+          <div v-if="rules.length===0" class="empty-state">{{ t.emptyRules }}</div>
         </div>
       </div>
+
+      <!-- 计算设置 -->
       <div class="card">
-        <div class="card-header"><div class="card-title">计算设置</div></div>
+        <div class="card-header"><div class="card-title">{{ t.settings }}</div></div>
         <div class="card-body">
           <div class="form-row">
-            <label>计算顺序</label>
+            <label>{{ t.calculationOrder }}</label>
             <select v-model="settings.calculationOrder" style="flex:1">
-              <option value="promotions-first">促销先，券后</option>
-              <option value="coupons-first">券先，促销后</option>
-              <option value="optimal">自动最优</option>
+              <option value="promotions-first">{{ t.promotionsFirst }}</option>
+              <option value="coupons-first">{{ t.couponsFirst }}</option>
+              <option value="optimal">{{ t.optimal }}</option>
             </select>
           </div>
           <div class="form-row">
-            <label>运费</label>
+            <label>{{ t.shippingFee }}</label>
             <input v-model="settings.shippingFee" placeholder="0" style="flex:1">
-            <label style="min-width:auto">用户组</label>
-            <input v-model="settings.userGroup" placeholder="如: member" style="flex:1">
+            <label style="min-width:auto">{{ t.userGroup }}</label>
+            <input v-model="settings.userGroup" placeholder="member" style="flex:1">
           </div>
-          <button class="btn btn-primary btn-block" v-on:click="calculate" style="margin-top:8px">立即计算</button>
+
+          <!-- 互斥组 -->
+          <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--gray-200)">
+            <label style="min-width:auto;font-weight:600;display:block;margin-bottom:8px">{{ t.mutexGroups }}</label>
+            <div class="form-row" style="margin-bottom:6px">
+              <select v-model="mutexGroup.selectedRule" style="flex:1" @change="addRuleToMutexGroup">
+                <option value="">{{ t.selectRule }}</option>
+                <option v-for="r in availableMutexRules" :key="r.name" :value="r.name">{{ r.displayName }} (P{{ r.priority }})</option>
+              </select>
+            </div>
+            <div class="cart-coupon-list" v-if="mutexGroup.ruleIds.length">
+              <div class="cart-coupon-tag" v-for="(rid, ridx) in mutexGroup.ruleIds" :key="rid">
+                {{ ruleDisplayMap[rid] || rid }} (P{{ (rules.find(x => x.name === rid) || {}).priority || '' }})
+                <button class="coupon-remove" @click="removeRuleFromMutexGroup(ridx)">×</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="right-col">
-      <div class="card">
-        <div class="card-header"><div class="card-title">计算结果</div></div>
-        <div class="card-body">
-          <div v-if="loading" class="empty-state">计算中...</div>
-          <template v-else-if="result">
-            <div class="summary-card">
-              <div style="display:flex;align-items:center;justify-content:space-between">
-                <div>
-                  <div class="summary-amount">¥{{ result.summary.payable_amount }}</div>
-                  <div class="summary-label">应付金额</div>
-                </div>
-                <div style="text-align:right">
-                  <div style="font-size:12px;color:var(--gray-500)">原价 <span style="color:var(--gray-700);font-weight:600">¥{{ result.summary.original_amount }}</span></div>
-                  <div style="font-size:12px;color:var(--success);margin-top:2px">- ¥{{ result.summary.total_discount }} 促销</div>
-                  <div v-if="result.summary.coupon_discount && result.summary.coupon_discount !== '0'" style="font-size:12px;color:var(--warning);margin-top:2px">- ¥{{ result.summary.coupon_discount }} 券</div>
-                </div>
-              </div>
-              <div class="summary-grid">
-                <div class="summary-item"><div class="val">¥{{ result.summary.original_amount }}</div><div class="lbl">原价</div></div>
-                <div class="summary-item"><div class="val" style="color:var(--success)">-¥{{ result.summary.total_discount }}</div><div class="lbl">促销优惠</div></div>
-                <div class="summary-item"><div class="val" style="color:var(--warning)">-¥{{ result.summary.coupon_discount }}</div><div class="lbl">券抵扣</div></div>
-              </div>
-            </div>
-            <div v-if="result.applied_promotions.length > 0">
-              <div class="card-title" style="margin-bottom:10px">生效规则 ({{ result.applied_promotions.length }})</div>
-              <div class="result-list">
-                <div v-for="p in result.applied_promotions" v-bind:key="p.promotion_code" class="result-item">
-                  <div><div style="font-weight:600">{{ p.promotion_code }}</div><div class="result-meta">{{ p.strategy_type }} | 优惠 ¥{{ p.discount }}</div></div>
-                  <span class="badge badge-green">生效</span>
-                </div>
-              </div>
-            </div>
-            <div v-if="result.used_coupons.length > 0" style="margin-top:16px">
-              <div class="card-title" style="margin-bottom:10px">使用优惠券 ({{ result.used_coupons.length }})</div>
-              <div class="result-list">
-                <div v-for="c in result.used_coupons" v-bind:key="c.code" class="result-item coupon">
-                  <div><div style="font-weight:600">{{ c.code }}</div><div class="result-meta">{{ c.coupon_type }} | 抵扣 ¥{{ c.discount }}</div></div>
-                  <span class="badge badge-amber">已用</span>
-                </div>
-              </div>
-            </div>
-            <div v-if="result.skipped_rules.length > 0" style="margin-top:16px">
-              <div class="card-title" style="margin-bottom:10px">被跳过规则 ({{ result.skipped_rules.length }})</div>
-              <div class="result-list">
-                <div v-for="r in result.skipped_rules" v-bind:key="r.code" class="result-item skip">
-                  <div><div style="font-weight:600;color:var(--gray-600)">{{ r.code }}</div><div class="result-meta">{{ r.reason }} | {{ r.message }}</div></div>
-                  <span class="badge badge-gray">跳过</span>
-                </div>
-              </div>
-            </div>
-          </template>
-          <div v-else class="empty-state">点击左侧「立即计算」查看结果</div>
+    </aside>
+
+    <!-- 右侧：商品 + 购物车 -->
+    <main class="right-col">
+      <!-- 商品展示 -->
+      <div>
+        <h2 class="section-title">{{ t.products }}</h2>
+        <div class="product-grid">
+          <div class="product-card" v-for="p in products" :key="p.id" @click="addToCart(p)">
+            <div class="product-image">{{ p.image }}</div>
+            <div class="product-name">{{ p[lang==='zh'?'name':'nameEn'] }}</div>
+            <div class="product-price">¥{{ p.price }}</div>
+            <button class="btn btn-primary btn-sm" @click.stop="addToCart(p)">{{ t.addToCart }}</button>
+          </div>
         </div>
+      </div>
+
+      <!-- 购物车 -->
+      <div class="cart-panel">
+        <h2 class="section-title">🛒 {{ t.cart }}</h2>
+        <div v-if="cart.length===0" class="empty-cart">
+          <div style="font-size:32px; margin-bottom:8px;">🛒</div>
+          {{ t.emptyCart }}
+        </div>
+        <div v-else>
+          <div class="cart-item" v-for="(item, idx) in cart" :key="item.sku">
+            <div class="cart-item-info">
+              <div class="cart-item-name">{{ item[lang==='zh'?'name':'nameEn'] }}</div>
+              <div class="cart-item-price">¥{{ item.price }} / {{ t.each }}</div>
+            </div>
+            <div class="cart-item-qty">
+              <button class="btn btn-ghost btn-sm" @click="changeQty(idx, -1)">−</button>
+              <span>{{ item.qty }}</span>
+              <button class="btn btn-ghost btn-sm" @click="changeQty(idx, 1)">+</button>
+            </div>
+            <div class="cart-item-total">¥{{ item.price * item.qty }}</div>
+            <button class="btn btn-danger btn-sm" @click="removeFromCart(idx)">{{ t.delete }}</button>
+          </div>
+
+          <!-- 优惠券 -->
+          <div class="cart-coupons">
+            <div class="coupon-card" v-for="(cp, idx) in cartCoupons" :key="cp.code" :class="{ active: cp.selected }">
+              <div class="coupon-face" :class="cp.type==='fixed_amount'?'red':'blue'">
+                <div class="amount">{{ cp.type==='fixed_amount'?'¥'+cp.value:cp.value+'%' }}</div>
+                <div class="unit">{{ cp.type==='fixed_amount'?t.couponValue:t.couponPercent }}</div>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-info-header">
+                  <label :for="'cp-'+idx" class="name">{{ t[cp.label] || cp.code }}</label>
+                  <span class="code">{{ cp.code }}</span>
+                </div>
+                <div class="coupon-info-body">
+                  <div class="field">
+                    <span>{{ cp.type==='fixed_amount'?t.couponValue:t.couponPercent }}</span>
+                    <input v-model="cp.value" type="number">
+                    <span>{{ cp.type==='fixed_amount'?'¥':'%' }}</span>
+                  </div>
+                  <div class="field">
+                    <span>{{ t.couponMinOrder }}</span>
+                    <input v-model="cp.minOrder" type="number">
+                  </div>
+                </div>
+                <div class="coupon-check-row">
+                  <input type="checkbox" v-model="cp.selected" :id="'cp-'+idx">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 汇总 -->
+          <div class="cart-summary">
+            <div class="cart-row">
+              <span>{{ t.subtotal }}</span>
+              <span>¥{{ cartSubtotal }}</span>
+            </div>
+            <div class="cart-row" v-if="selectedCoupons.length">
+              <span>{{ t.couponsLabel }}</span>
+              <span style="color:var(--warning)">{{ selectedCoupons.length }} {{ t.couponCountUnit }}</span>
+            </div>
+            <button class="btn btn-primary btn-lg btn-block" @click="checkout">{{ t.checkout }}</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 结算弹窗 -->
+  <div v-if="showCheckout" class="modal-overlay" @click.self="showCheckout=false">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>📋 {{ t.orderConfirm }}</h2>
+        <button class="btn btn-ghost btn-sm" @click="showCheckout=false">{{ t.close }}</button>
+      </div>
+      <div class="modal-body">
+        <div v-if="checkoutLoading" class="empty-state">{{ t.calculating }}</div>
+        <template v-else-if="checkoutResult">
+          <!-- 商品清单 -->
+          <div class="order-section">
+            <div class="order-section-title">{{ t.orderItems }}</div>
+            <div class="order-item" v-for="item in cart" :key="item.sku">
+              <span class="name">{{ item[lang==='zh'?'name':'nameEn'] }} × {{ item.qty }}</span>
+              <span class="price">¥{{ item.price * item.qty }}</span>
+            </div>
+            <div class="order-divider"></div>
+            <div class="order-item">
+              <span class="name">{{ t.originalAmount }}</span>
+              <span class="price">¥{{ checkoutResult.summary.original_amount }}</span>
+            </div>
+          </div>
+
+          <!-- 优惠明细 -->
+          <div class="order-section" v-if="checkoutResult.applied_promotions.length || checkoutResult.used_coupons.length">
+            <div class="order-section-title">{{ t.discountDetails }}</div>
+            <div class="applied-list">
+              <div class="applied-item" v-for="p in checkoutResult.applied_promotions" :key="p.promotion_code">
+                <div>
+                  <div style="font-weight:600">{{ checkoutRuleLabelMap[p.promotion_code] || p.promotion_code }}</div>
+                  <div class="applied-meta">{{ p.strategy_type }} <span v-if="p.discount !== '0'">| {{ t.save }} ¥{{ p.discount }}</span><span v-if="p.free_shipping">| {{ t.freeShippingApplied }}</span></div>
+                </div>
+                <span class="badge badge-green">{{ t.applied }}</span>
+              </div>
+              <div class="applied-item coupon-item" v-for="c in checkoutResult.used_coupons" :key="c.code">
+                <div>
+                  <div style="font-weight:600">{{ c.code }}</div>
+                  <div class="applied-meta">{{ c.coupon_type }} | {{ t.save }} ¥{{ c.discount }}</div>
+                </div>
+                <span class="badge badge-amber">{{ t.used }}</span>
+              </div>
+            </div>
+            <div class="order-divider"></div>
+            <div class="order-discount">
+              <span class="label">{{ t.promotionDiscount }}</span>
+              <span class="amount">-¥{{ checkoutResult.summary.total_discount }}</span>
+            </div>
+            <div class="order-discount coupon" v-if="checkoutResult.summary.coupon_discount !== '0'">
+              <span class="label">{{ t.couponDiscount }}</span>
+              <span class="amount">-¥{{ checkoutResult.summary.coupon_discount }}</span>
+            </div>
+            <div class="order-divider"></div>
+            <div class="order-discount" v-if="checkoutResult.summary.shipping_fee !== '0'">
+              <span class="label">{{ t.shippingFee }}</span>
+              <span class="amount">+¥{{ checkoutResult.summary.shipping_fee }}</span>
+            </div>
+          </div>
+
+          <div class="order-divider"></div>
+          <div class="order-total">
+            <span class="label">{{ t.payableAmount }}</span>
+            <span class="amount">¥{{ checkoutResult.summary.payable_amount }}</span>
+          </div>
+
+          <div v-if="checkoutResult.skipped_rules.length" class="order-section" style="margin-top:14px;">
+            <div class="order-section-title" style="color:var(--gray-500)">{{ t.skippedRules }} ({{ checkoutResult.skipped_rules.length }})</div>
+            <div class="applied-list">
+              <div class="applied-item skip-item" v-for="r in checkoutResult.skipped_rules" :key="r.code">
+                <div>
+                  <div style="font-weight:600;color:var(--gray-600)">{{ checkoutRuleLabelMap[r.code] || r.code }}</div>
+                  <div class="applied-meta">{{ r.reason }} | {{ r.message }}</div>
+                </div>
+                <span class="badge badge-gray">{{ t.skipped }}</span>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div v-else class="empty-state">{{ t.clickCalculate }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-block btn-lg" @click="confirmOrder">{{ t.confirmOrder }}</button>
       </div>
     </div>
   </div>
@@ -264,79 +463,270 @@
 <script>
 const { createApp } = Vue;
 
+const I18N = {
+  zh: {
+    title: '促销引擎演示',
+    subtitle: '高精度促销计算引擎演示 | 互斥感知 | 插件化',
+    products: '商品列表',
+    addToCart: '加入购物车',
+    cart: '购物车',
+    emptyCart: '购物车是空的，点击上方商品添加',
+    subtotal: '小计',
+    each: '件',
+    couponsLabel: '优惠券',
+    couponCountUnit: '张',
+    checkout: '立即结算',
+    orderConfirm: '订单确认',
+    orderItems: '商品清单',
+    originalAmount: '原价合计',
+    discountDetails: '优惠明细',
+    promotionDiscount: '促销优惠',
+    couponDiscount: '券抵扣',
+    shippingFee: '运费',
+    payableAmount: '应付金额',
+    confirmOrder: '确认下单',
+    close: '关闭',
+    save: '优惠',
+    applied: '生效',
+    used: '已用',
+    skipped: '跳过',
+    calculating: '计算中...',
+    clickCalculate: '点击结算查看优惠详情',
+    rules: '促销规则',
+    addRule: '添加规则',
+    ruleCondition: '规则条件',
+    ruleAction: '规则动作',
+    scope: '作用范围',
+    priority: '优先级',
+    delete: '删除',
+    settings: '计算设置',
+    calculationOrder: '计算顺序',
+    shippingFee: '运费',
+    userGroup: '用户组',
+    promotionsFirst: '促销先，券后',
+    couponsFirst: '券先，促销后',
+    optimal: '自动最优',
+    tierConfig: '阶梯配置',
+    addTier: '添加层级',
+    emptyRules: '暂无规则，点击右上角添加',
+    couponReduce: '满减券',
+    couponDiscount: '折扣券',
+    couponValue: '面值',
+    couponPercent: '折扣',
+    couponMinOrder: '最低消费',
+    skippedRules: '被跳过规则',
+    condMinOrder: '订单金额 ≥', condMinQty: '商品数量 ≥', condFirstOrder: '首单用户',
+    condUserGroup: '用户组等于', condWeekday: '星期几',
+    actFixedReduction: '固定减免', actPercentage: '百分比折扣', actFixedPrice: '固定价',
+    actFreeShipping: '免运费', actTieredPrice: '阶梯价', actTieredAmount: '阶梯优惠',
+    actPointsDeduct: '积分抵扣', actPreSale: '预售',
+    scopeAll: '全部商品', scopeSpecific: '指定SKU', scopeCategory: '指定品类',
+    scopeTag: '指定标签', scopeExcept: '排除SKU',
+    presetDefault: '默认', presetFullReduction: '满减', presetPercentage: '折扣',
+    presetMutex: '互斥', presetCoupon: '促销+券', presetOptimal: '最优', presetTiered: '阶梯价',
+    mutexGroups: '互斥组', selectRule: '选择规则', unknownRule: '未知规则',
+    freeShippingApplied: '免运费',
+  },
+  en: {
+    title: 'Promotion Engine Demo',
+    subtitle: 'High-precision promotion engine | Mutex-aware | Plugin-based',
+    products: 'Products',
+    addToCart: 'Add to Cart',
+    cart: 'Shopping Cart',
+    emptyCart: 'Your cart is empty. Click a product above to add.',
+    subtotal: 'Subtotal',
+    each: 'ea',
+    couponsLabel: 'Coupons',
+    couponCountUnit: '',
+    checkout: 'Checkout',
+    orderConfirm: 'Order Confirmation',
+    orderItems: 'Items',
+    originalAmount: 'Subtotal',
+    discountDetails: 'Discount Details',
+    promotionDiscount: 'Promotion Discount',
+    couponDiscount: 'Coupon Discount',
+    shippingFee: 'Shipping Fee',
+    payableAmount: 'Payable Amount',
+    confirmOrder: 'Confirm Order',
+    close: 'Close',
+    save: 'Save',
+    applied: 'Applied',
+    used: 'Used',
+    skipped: 'Skipped',
+    calculating: 'Calculating...',
+    clickCalculate: 'Click checkout to see discount details',
+    rules: 'Promotion Rules',
+    addRule: 'Add Rule',
+    ruleCondition: 'Condition',
+    ruleAction: 'Action',
+    scope: 'Scope',
+    priority: 'Priority',
+    delete: 'Delete',
+    settings: 'Settings',
+    calculationOrder: 'Order',
+    shippingFee: 'Shipping',
+    userGroup: 'User Group',
+    promotionsFirst: 'Promotions First',
+    couponsFirst: 'Coupons First',
+    optimal: 'Auto Optimal',
+    tierConfig: 'Tier Config',
+    addTier: 'Add Tier',
+    emptyRules: 'No rules yet. Click top-right to add.',
+    couponReduce: 'Reduction Coupon',
+    couponDiscount: 'Discount Coupon',
+    couponValue: 'Value',
+    couponPercent: 'Percent',
+    couponMinOrder: 'Min Order',
+    skippedRules: 'Skipped Rules',
+    condMinOrder: 'Order Amount ≥', condMinQty: 'Item Qty ≥', condFirstOrder: 'First Order',
+    condUserGroup: 'User Group =', condWeekday: 'Weekday',
+    actFixedReduction: 'Fixed Reduction', actPercentage: 'Percentage Discount', actFixedPrice: 'Fixed Price',
+    actFreeShipping: 'Free Shipping', actTieredPrice: 'Tiered Price', actTieredAmount: 'Tiered Discount',
+    actPointsDeduct: 'Points Deduct', actPreSale: 'Pre-sale',
+    scopeAll: 'All Items', scopeSpecific: 'Specific SKU', scopeCategory: 'Category',
+    scopeTag: 'Tag', scopeExcept: 'Except SKU',
+    presetDefault: 'Default', presetFullReduction: 'Full Reduction', presetPercentage: 'Percentage',
+    presetMutex: 'Mutex', presetCoupon: 'Promo+Coupon', presetOptimal: 'Optimal', presetTiered: 'Tiered',
+    mutexGroups: 'Mutex Groups', selectRule: 'Select Rule', unknownRule: 'Unknown Rule',
+    freeShippingApplied: 'Free Shipping',
+  }
+};
+
 createApp({
   data() {
     return {
-      STRATEGIES: [
-        {value:'full_reduction', label:'满减'},
-        {value:'full_discount', label:'满折'},
-        {value:'special_price', label:'固定价'},
-        {value:'free_shipping', label:'包邮'},
-        {value:'tiered_price', label:'阶梯价'},
-        {value:'tiered_amount', label:'阶梯优惠'},
-        {value:'first_order', label:'首单'},
-        {value:'points_deduct', label:'积分抵扣'},
-        {value:'pre_sale', label:'预售'},
+      lang: 'zh',
+      products: [
+        {id:'P001', name:'无线耳机', nameEn:'Wireless Earbuds', price:199, image:'🎧', category:'electronics'},
+        {id:'P002', name:'智能手表', nameEn:'Smart Watch', price:899, image:'⌚', category:'electronics'},
+        {id:'P003', name:'运动鞋', nameEn:'Running Shoes', price:399, image:'👟', category:'sport'},
+        {id:'P004', name:'双肩包', nameEn:'Backpack', price:299, image:'🎒', category:'bags'},
+        {id:'P005', name:'咖啡机', nameEn:'Coffee Maker', price:1299, image:'☕', category:'home'},
+        {id:'P006', name:'机械键盘', nameEn:'Mech Keyboard', price:599, image:'⌨️', category:'electronics'},
+        {id:'P007', name:'蓝牙音箱', nameEn:'BT Speaker', price:349, image:'🔊', category:'electronics'},
+        {id:'P008', name:'瑜伽垫', nameEn:'Yoga Mat', price:89, image:'🧘', category:'sport'},
+        {id:'P009', name:'空气炸锅', nameEn:'Air Fryer', price:459, image:'🍟', category:'home'},
+        {id:'P010', name:'护眼台灯', nameEn:'Desk Lamp', price:189, image:'💡', category:'home'},
+        {id:'P011', name:'运动水壶', nameEn:'Water Bottle', price:59, image:'🍼', category:'sport'},
+        {id:'P012', name:'护手霜', nameEn:'Hand Cream', price:49, image:'🧴', category:'beauty'},
       ],
-      COND_TYPES: [
-        {value:'min_order_amount', label:'订单金额 ≥', param:'amount', placeholder:'300'},
-        {value:'min_item_quantity', label:'商品数量 ≥', param:'quantity', placeholder:'2'},
-        {value:'is_first_order', label:'首单用户', param:null},
-        {value:'user_group', label:'用户组等于', param:'group', placeholder:'member'},
-        {value:'weekday', label:'星期几', param:'days', placeholder:'1,2,3'},
+      cart: [],
+      cartCoupons: [
+        { code: 'REDUCE10', label: 'couponReduce', type: 'fixed_amount', value: '10', minOrder: '0', selected: false },
+        { code: 'DISCOUNT10', label: 'couponDiscount', type: 'percentage', value: '10', minOrder: '0', selected: false },
       ],
-      ACTION_TYPES: [
-        {value:'fixed_amount_reduction', label:'固定减免', param:'amount', placeholder:'50'},
-        {value:'percentage_discount', label:'百分比折扣', param:'percentage', placeholder:'20'},
-        {value:'fixed_price', label:'固定价', param:'price', placeholder:'99'},
-        {value:'free_shipping', label:'免运费', param:null},
-        {value:'tiered_price', label:'阶梯价', param:'tiers_json', placeholder:'[{"quantity":1,"price":100}]'},
-        {value:'tiered_amount', label:'阶梯优惠', param:'tiers_json', placeholder:'[{"threshold":100,"amount":10}]'},
-        {value:'points_deduct', label:'积分抵扣', param:'points', placeholder:'100'},
-        {value:'pre_sale', label:'预售', param:'deposit_ratio', placeholder:'0.1'},
-      ],
-      SCOPE_TYPES: [
-        {value:'all_items', label:'全部商品'},
-        {value:'specific_items', label:'指定SKU', param:'skus', placeholder:'SKU001,SKU002'},
-        {value:'category_items', label:'指定品类', param:'category_ids', placeholder:'cat1,cat2'},
-        {value:'tag_items', label:'指定标签', param:'tags', placeholder:'new,hot'},
-        {value:'except_items', label:'排除SKU', param:'skus', placeholder:'SKU099'},
-      ],
-      cartItems: [],
-      coupons: [],
       rules: [],
-      settings: { calculationOrder: 'promotions-first', shippingFee: '0', userGroup: '' },
-      result: null,
-      loading: false,
+      settings: { calculationOrder:'promotions-first', shippingFee:'0', userGroup:'' },
+      mutexGroup: { selectedRule: '', ruleIds: [] },
+      showCheckout: false,
+      checkoutLoading: false,
+      checkoutResult: null,
       ruleIdCounter: 0,
     };
+  },
+  computed: {
+    t() { return I18N[this.lang] || I18N.zh; },
+    cartSubtotal() {
+      return this.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    },
+    selectedCoupons() {
+      return this.cartCoupons.filter(c => c.selected);
+    },
+    STRATEGIES() {
+      return [
+        {value:'full_reduction', label:this.t.presetFullReduction}, {value:'full_discount', label:this.t.presetPercentage},
+        {value:'special_price', label:this.t.actFixedPrice}, {value:'free_shipping', label:this.t.actFreeShipping},
+        {value:'tiered_price', label:this.t.actTieredPrice}, {value:'tiered_amount', label:this.t.actTieredAmount},
+        {value:'first_order', label:this.t.condFirstOrder}, {value:'points_deduct', label:this.t.actPointsDeduct},
+        {value:'pre_sale', label:this.t.actPreSale},
+      ];
+    },
+    COND_TYPES() {
+      return [
+        {value:'min_order_amount', label:this.t.condMinOrder, param:'amount', placeholder:'300'},
+        {value:'min_quantity', label:this.t.condMinQty, param:'quantity', placeholder:'2'},
+        {value:'is_first_order', label:this.t.condFirstOrder, param:null},
+        {value:'user_group', label:this.t.condUserGroup, param:'group', placeholder:'member'},
+        {value:'day_of_week', label:this.t.condWeekday, param:'days', placeholder:'1,2,3'},
+      ];
+    },
+    ACTION_TYPES() {
+      return [
+        {value:'fixed_amount_reduction', label:this.t.actFixedReduction, param:'amount', placeholder:'50'},
+        {value:'percentage_discount', label:this.t.actPercentage, param:'percentage', placeholder:'20'},
+        {value:'fixed_price', label:this.t.actFixedPrice, param:'price', placeholder:'99'},
+        {value:'free_shipping', label:this.t.actFreeShipping, param:null},
+        {value:'tiered_price', label:this.t.actTieredPrice, param:'tiers_json', placeholder:'[{"quantity":1,"price":100}]'},
+        {value:'tiered_amount', label:this.t.actTieredAmount, param:'tiers_json', placeholder:'[{"threshold":100,"amount":10}]'},
+        {value:'points_deduct', label:this.t.actPointsDeduct, param:'points', placeholder:'100'},
+        {value:'pre_sale', label:this.t.actPreSale, param:'deposit_ratio', placeholder:'0.1'},
+      ];
+    },
+    SCOPE_TYPES() {
+      return [
+        {value:'all_items', label:this.t.scopeAll},
+        {value:'specific_items', label:this.t.scopeSpecific, param:'skus', placeholder:'SKU001,SKU002'},
+        {value:'category_items', label:this.t.scopeCategory, param:'category_ids', placeholder:'cat1,cat2'},
+        {value:'tag_items', label:this.t.scopeTag, param:'tags', placeholder:'new,hot'},
+        {value:'except_items', label:this.t.scopeExcept, param:'skus', placeholder:'SKU099'},
+      ];
+    },
+    PRESETS() {
+      return [
+        {key:'default', label:this.t.presetDefault}, {key:'full_reduction', label:this.t.presetFullReduction},
+        {key:'percentage', label:this.t.presetPercentage}, {key:'mutex', label:this.t.presetMutex},
+        {key:'coupon', label:this.t.presetCoupon}, {key:'optimal', label:this.t.presetOptimal},
+        {key:'tiered', label:this.t.presetTiered},
+      ];
+    },
+    availableMutexRules() {
+      const used = new Set(this.mutexGroup.ruleIds || []);
+      return this.rules
+        .filter(r => r.name && !used.has(r.name))
+        .map(r => {
+          const label = this.ACTION_TYPES.find(a => a.value === r.actType)?.label || r.name || this.t.unknownRule;
+          return { ...r, displayName: label };
+        });
+    },
+    ruleDisplayMap() {
+      const map = {};
+      this.rules.forEach(r => {
+        map[r.name] = this.ACTION_TYPES.find(a => a.value === r.actType)?.label || r.name || this.t.unknownRule;
+      });
+      return map;
+    },
+    checkoutRuleLabelMap() {
+      const map = {};
+      this.rules.forEach(r => {
+        map[r.name] = this.ACTION_TYPES.find(a => a.value === r.actType)?.label || r.name || this.t.unknownRule;
+      });
+      return map;
+    },
   },
   mounted() {
     this.loadPreset('default');
   },
   methods: {
-    addCartItem(data) {
-      this.cartItems.push({
-        sku: data?.sku || 'SKU' + (this.cartItems.length + 1),
-        price: data?.price ?? 100,
-        qty: data?.qty ?? 1,
-        categoryId: data?.category_id || '',
-      });
+    addToCart(product) {
+      const existing = this.cart.find(item => item.sku === product.id);
+      if (existing) {
+        existing.qty++;
+      } else {
+        this.cart.push({
+          sku: product.id, name: product.name, nameEn: product.nameEn,
+          price: product.price, qty: 1, categoryId: product.category,
+        });
+      }
     },
-    removeCartItem(index) {
-      this.cartItems.splice(index, 1);
+    removeFromCart(index) {
+      this.cart.splice(index, 1);
     },
-    addCoupon(data) {
-      this.coupons.push({
-        code: data?.code || 'COUPON' + (this.coupons.length + 1),
-        type: data?.coupon_type || 'fixed_amount',
-        value: data?.discount_value ?? '20',
-        minOrder: data?.min_order_amount ?? '0',
-      });
+    changeQty(index, delta) {
+      const item = this.cart[index];
+      item.qty += delta;
+      if (item.qty <= 0) this.cart.splice(index, 1);
     },
-    removeCoupon(index) {
-      this.coupons.splice(index, 1);
-    },
+
     addRule(data) {
       this.ruleIdCounter++;
       const id = this.ruleIdCounter;
@@ -363,8 +753,8 @@ createApp({
       else if (strategy === 'free_shipping') { actType = 'free_shipping'; actParam = ''; }
       else if (strategy === 'tiered_price') {
         actType = 'tiered_price'; actParam = '';
-        const tiers = data?.actions?.[0]?.config?.tiers || [{quantity:1,price:100},{quantity:3,price:90}];
-        tieredRows = tiers.map(t => ({ a: t.quantity, b: t.price }));
+        const tiers = data?.actions?.[0]?.config?.tiers || [{quantity:1,amount:10},{quantity:3,amount:20}];
+        tieredRows = tiers.map(t => ({ a: t.quantity, b: t.amount }));
       }
       else if (strategy === 'tiered_amount') {
         actType = 'tiered_amount'; actParam = '';
@@ -384,20 +774,14 @@ createApp({
       }
       return { condType, condParam, actType, actParam, scopeType, scopeParam, tieredRows };
     },
-    onCondChange(rule) {
-      rule.condParam = '';
-    },
+    onCondChange(rule) { rule.condParam = ''; },
     onActionChange(rule) {
       rule.actParam = '';
       if (this.isTiered(rule.actType)) {
-        if (!rule.tieredRows || rule.tieredRows.length === 0) {
-          this.addTieredRow(rule);
-        }
+        if (!rule.tieredRows || rule.tieredRows.length === 0) this.addTieredRow(rule);
       }
     },
-    onScopeChange(rule) {
-      rule.scopeParam = '';
-    },
+    onScopeChange(rule) { rule.scopeParam = ''; },
     isTiered(type) { return type === 'tiered_price' || type === 'tiered_amount'; },
     condHasParam(type) { return !!(this.COND_TYPES.find(c => c.value === type)?.param); },
     condPlaceholder(type) { return this.COND_TYPES.find(c => c.value === type)?.placeholder || ''; },
@@ -406,9 +790,9 @@ createApp({
     scopeHasParam(type) { return !!(this.SCOPE_TYPES.find(s => s.value === type)?.param); },
     scopePlaceholder(type) { return this.SCOPE_TYPES.find(s => s.value === type)?.placeholder || ''; },
     tieredLabelA(type) { return type === 'tiered_price' ? '数量≥' : '金额≥'; },
-    tieredLabelB(type) { return type === 'tiered_price' ? '单价' : '减免'; },
+    tieredLabelB(type) { return type === 'tiered_price' ? '每件减' : '减免'; },
     addTieredRow(rule, rowData) {
-      rule.tieredRows.push({ a: rowData ? (rowData.a ?? rowData.quantity ?? rowData.threshold ?? '') : '', b: rowData ? (rowData.b ?? rowData.price ?? rowData.amount ?? '') : '' });
+      rule.tieredRows.push({ a: rowData ? (rowData.a ?? rowData.quantity ?? rowData.threshold ?? '') : '', b: rowData ? (rowData.b ?? rowData.amount ?? rowData.price ?? '') : '' });
     },
     removeTieredRow(rule, idx) {
       rule.tieredRows.splice(idx, 1);
@@ -439,7 +823,7 @@ createApp({
         const tiers = [];
         rule.tieredRows.forEach(row => {
           if (row.a !== '' && row.b !== '') {
-            if (rule.actType === 'tiered_price') tiers.push({ quantity: parseFloat(row.a), price: parseFloat(row.b) });
+            if (rule.actType === 'tiered_price') tiers.push({ quantity: parseFloat(row.a), amount: parseFloat(row.b) });
             else tiers.push({ threshold: parseFloat(row.a), amount: parseFloat(row.b) });
           }
         });
@@ -453,10 +837,12 @@ createApp({
       if (rule.scopeParam && rule.scopeParam !== '') {
         const cfg = this.SCOPE_TYPES.find(s => s.value === rule.scopeType);
         const key = cfg?.param || 'value';
+        // except_items 需要 except_skus 键
+        const configKey = rule.scopeType === 'except_items' ? 'except_skus' : key;
         if (key === 'skus' || key === 'category_ids' || key === 'tags') {
-          scopes[0].config[key] = rule.scopeParam.split(',').map(s => s.trim()).filter(Boolean);
+          scopes[0].config[configKey] = rule.scopeParam.split(',').map(s => s.trim()).filter(Boolean);
         } else {
-          scopes[0].config[key] = rule.scopeParam;
+          scopes[0].config[configKey] = rule.scopeParam;
         }
       }
       return { conditions, actions, scopes };
@@ -471,61 +857,102 @@ createApp({
         };
       });
     },
-    async calculate() {
-      this.loading = true;
+    async checkout() {
+      if (this.cart.length === 0) { alert(this.t.emptyCart); return; }
+      this.showCheckout = true;
+      this.checkoutLoading = true;
+      this.checkoutResult = null;
       try {
         const payload = {
-          cart_items: this.cartItems.map(item => ({
+          cart_items: this.cart.map(item => ({
             sku: item.sku, price: String(item.price), qty: Number(item.qty) || 1, category_id: item.categoryId || '',
           })),
           rules: this.getRules(),
-          coupons: this.coupons.map(c => ({
-            code: c.code, coupon_type: c.type, discount_value: String(c.value), min_order_amount: String(c.minOrder), priority: 0,
-          })),
+          coupons: this.selectedCoupons.map(c => {
+            let type = c.type;
+            let value = c.value;
+            if (type === 'fixed_amount') type = 'full_reduction';
+            else if (type === 'percentage') {
+              type = 'percentage_discount';
+              const pct = parseFloat(value) || 0;
+              value = String(1 - pct / 100);
+            }
+            return {
+              code: c.code, coupon_type: type, discount_value: String(value), min_order_amount: String(c.minOrder), priority: 0,
+            };
+          }),
           calculation_order: this.settings.calculationOrder,
           shipping_fee: String(this.settings.shippingFee),
           user_group: this.settings.userGroup,
+          mutex_groups: this.mutexGroup.ruleIds.length ? [{
+            code: 'default', name: 'default', strategies: [],
+            rule_ids: this.mutexGroup.ruleIds,
+            is_active: true,
+          }] : [],
         };
         const res = await fetch('/api/calculate', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
         });
-        this.result = await res.json();
+        this.checkoutResult = await res.json();
       } catch (e) {
-        alert('请求失败: ' + e.message);
+        alert('Request failed: ' + e.message);
       } finally {
-        this.loading = false;
+        this.checkoutLoading = false;
       }
     },
+    confirmOrder() {
+      alert(this.lang === 'zh' ? '订单已提交！' : 'Order placed!');
+      this.showCheckout = false;
+    },
+    addRuleToMutexGroup() {
+      const rid = this.mutexGroup.selectedRule;
+      if (!rid) return;
+      if (!this.mutexGroup.ruleIds.includes(rid)) {
+        this.mutexGroup.ruleIds.push(rid);
+      }
+      this.mutexGroup.selectedRule = '';
+    },
+    removeRuleFromMutexGroup(index) {
+      this.mutexGroup.ruleIds.splice(index, 1);
+    },
     loadPreset(name) {
-      this.cartItems = []; this.coupons = []; this.rules = []; this.ruleIdCounter = 0;
+      this.cart = [];
+      this.cartCoupons = [
+        { code: 'REDUCE10', label: 'couponReduce', type: 'fixed_amount', value: '10', minOrder: '0', selected: false },
+        { code: 'DISCOUNT10', label: 'couponDiscount', type: 'percentage', value: '10', minOrder: '0', selected: false },
+      ];
+      this.rules = []; this.ruleIdCounter = 0; this.mutexGroup = { selectedRule: '', ruleIds: [] };
       if (name === 'full_reduction') {
-        this.addCartItem({sku:'A001', price:199, qty:2});
-        this.addCartItem({sku:'A002', price:89, qty:1});
-        this.addRule({promotion_code:'满300减50', strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:300}}], actions:[{config:{amount:50}}]});
+        this.products.forEach((p,i) => { if(i<2) this.addToCart(p); });
+        this.addRule({strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:300}}], actions:[{config:{amount:50}}]});
       } else if (name === 'percentage') {
-        this.addCartItem({sku:'B001', price:299, qty:1});
-        this.addRule({promotion_code:'9折优惠', strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:90}}]});
+        this.addToCart(this.products[1]);
+        this.addRule({strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:90}}]});
       } else if (name === 'mutex') {
-        this.addCartItem({sku:'C001', price:500, qty:1});
-        this.addRule({promotion_code:'满减100', strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:400}}], actions:[{config:{amount:100}}]});
-        this.addRule({promotion_code:'满减50', strategy_type:'full_reduction', priority:90, conditions:[{config:{amount:400}}], actions:[{config:{amount:50}}]});
+        this.addToCart(this.products[1]);
+        this.cart[0].qty = 1; this.cart[0].price = 500;
+        this.addRule({strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:400}}], actions:[{config:{amount:100}}]});
+        this.addRule({strategy_type:'full_reduction', priority:90, conditions:[{config:{amount:400}}], actions:[{config:{amount:50}}]});
       } else if (name === 'coupon') {
-        this.addCartItem({sku:'D001', price:400, qty:1});
-        this.addCoupon({code:'NEWUSER20', coupon_type:'fixed_amount', discount_value:'20', min_order_amount:'100'});
-        this.addRule({promotion_code:'促销8折', strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:80}}]});
+        this.addToCart(this.products[1]);
+        this.cart[0].qty = 1; this.cart[0].price = 400;
+        this.cartCoupons.find(c => c.code === 'REDUCE10').selected = true;
+        this.addRule({strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:80}}]});
         this.settings.calculationOrder = 'promotions-first';
       } else if (name === 'optimal') {
-        this.addCartItem({sku:'E001', price:400, qty:1});
-        this.addCoupon({code:'SAVE50', coupon_type:'fixed_amount', discount_value:'50', min_order_amount:'0'});
-        this.addRule({promotion_code:'促销8折', strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:80}}]});
+        this.addToCart(this.products[1]);
+        this.cart[0].qty = 1; this.cart[0].price = 400;
+        this.cartCoupons.find(c => c.code === 'REDUCE10').selected = true; this.cartCoupons.find(c => c.code === 'REDUCE10').value = '50';
+        this.addRule({strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:80}}]});
         this.settings.calculationOrder = 'optimal';
       } else if (name === 'tiered') {
-        this.addCartItem({sku:'F001', price:100, qty:5});
-        this.addRule({promotion_code:'阶梯价', strategy_type:'tiered_price', priority:100, conditions:[], actions:[{config:{tiers:[{quantity:1, price:100}, {quantity:3, price:90}, {quantity:5, price:80}]}}]});
+        this.addToCart(this.products[0]);
+        this.cart[0].qty = 5;
+        this.addRule({strategy_type:'tiered_price', priority:100, conditions:[], actions:[{config:{tiers:[{quantity:1, amount:10}, {quantity:3, amount:20}, {quantity:5, amount:30}]}}]});
       } else if (name === 'default') {
-        this.addCartItem({sku:'T001', price:199, qty:2});
-        this.addCartItem({sku:'T002', price:89, qty:1});
-        this.addRule({promotion_code:'满减', strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:300}}], actions:[{config:{amount:50}}]});
+        this.addToCart(this.products[0]);
+        this.addToCart(this.products[3]);
+        this.addRule({strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:300}}], actions:[{config:{amount:50}}]});
       }
     },
   }
