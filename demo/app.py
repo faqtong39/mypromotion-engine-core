@@ -319,7 +319,7 @@ def main():
         webbrowser.open(url)
 
     Timer(1.5, open_browser).start()
-    print(f"\n🚀 Promotion Engine Demo starting at {url}\n")
+    print(f"\nPromotion Engine Demo starting at {url}\n")
     uvicorn.run(app, host=host, port=port)
 
 
