@@ -102,6 +102,14 @@
   .mutex-tag-remove { cursor: pointer; color: var(--gray-400); font-size: 18px; line-height: 1; padding: 0 4px; margin-left: auto; }
   .mutex-tag-remove:hover { color: var(--danger); }
 
+  /* 能力对比表格 */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .compare-table th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--gray-200); color: var(--gray-500); font-weight: 500; }
+  .compare-table td { padding: 6px 4px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+  .compare-table td:first-child { color: var(--gray-700); font-weight: 500; width: 70px; }
+  .compare-table td:nth-child(2) { color: var(--gray-500); }
+  .compare-table td:nth-child(3) { color: var(--primary); font-weight: 500; }
+
   /* 生效规则 checkbox 去默认蓝框 */
   /* 表单 checkbox 去默认蓝框 */
   .form-checkbox { position: relative; width: 14px; height: 14px; border: 1px solid var(--gray-400); border-radius: 3px; background: #fff; cursor: pointer; appearance: none; -webkit-appearance: none; flex: none; margin: 0; outline: none; box-shadow: none; }
@@ -286,6 +294,28 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 能力对比 -->
+      <div class="card">
+        <div class="card-header" style="cursor:pointer" @click="showCompare=!showCompare">
+          <div class="card-title">{{ t.compareTitle }}</div>
+          <span style="font-size:12px;color:var(--gray-500)">{{ showCompare?'▼':'▶' }}</span>
+        </div>
+        <div class="card-body" v-if="showCompare" style="padding-top:0">
+          <table class="compare-table">
+            <thead><tr><th>{{ t.compareFeature }}</th><th>{{ t.compareOpen }}</th><th>{{ t.compareSaaS }}</th></tr></thead>
+            <tbody>
+              <tr><td>{{ t.compareRules }}</td><td>{{ t.compareRulesOpen }}</td><td>{{ t.compareRulesSaaS }}</td></tr>
+              <tr><td>{{ t.compareCalc }}</td><td>{{ t.compareCalcOpen }}</td><td>{{ t.compareCalcSaaS }}</td></tr>
+              <tr><td>{{ t.compareTenant }}</td><td>{{ t.compareTenantOpen }}</td><td>{{ t.compareTenantSaaS }}</td></tr>
+              <tr><td>{{ t.compareRefund }}</td><td>{{ t.compareRefundOpen }}</td><td>{{ t.compareRefundSaaS }}</td></tr>
+              <tr><td>{{ t.compareMonitor }}</td><td>{{ t.compareMonitorOpen }}</td><td>{{ t.compareMonitorSaaS }}</td></tr>
+              <tr><td>{{ t.compareCoupon }}</td><td>{{ t.compareCouponOpen }}</td><td>{{ t.compareCouponSaaS }}</td></tr>
+            </tbody>
+          </table>
+          <a href="https://mp.tooly.run" target="_blank" class="btn btn-primary btn-sm" style="margin-top:10px;display:inline-block;text-decoration:none">{{ t.compareLink }} →</a>
         </div>
       </div>
 
@@ -586,6 +616,29 @@ const I18N = {
     activeRules: '生效规则',
     tabList: '规则列表', tabCreate: '新建规则',
     createRule: '新建规则', saveRule: '保存到规则库', saveOk: '保存成功',
+    compareTitle: '开源引擎 vs SaaS 平台',
+    compareFeature: '能力',
+    compareOpen: '开源引擎',
+    compareSaaS: 'SaaS 平台',
+    compareRules: '规则管理',
+    compareRulesOpen: '内存定义，手动创建',
+    compareRulesSaaS: '后台配置，55个模板',
+    compareCalc: '计算方式',
+    compareCalcOpen: '直接传 rules 定义',
+    compareCalcSaaS: 'promotion_codes 查库 / 智能计算',
+    compareTenant: '多租户',
+    compareTenantOpen: '无',
+    compareTenantSaaS: '完整隔离 + 配额控制',
+    compareRefund: '退款计算',
+    compareRefundOpen: '无',
+    compareRefundSaaS: '凭证快照 + 逆向退款',
+    compareMonitor: '运营监控',
+    compareMonitorOpen: '无',
+    compareMonitorSaaS: '审计日志 + 统计看板',
+    compareCoupon: '消费券',
+    compareCouponOpen: '无',
+    compareCouponSaaS: '模板 / 发放 / 核销',
+    compareLink: '了解更多',
     codeRequired: '请输入规则编码', codePlaceholder: '规则编码（如 PROMO001）',
     confirmDelete: '确定删除该规则？',
   },
@@ -657,6 +710,29 @@ const I18N = {
     activeRules: 'Active Rules',
     tabList: 'Rule List', tabCreate: 'New Rule',
     createRule: 'New Rule', saveRule: 'Save to Store', saveOk: 'Saved',
+    compareTitle: 'Open Source vs SaaS',
+    compareFeature: 'Feature',
+    compareOpen: 'Open Source',
+    compareSaaS: 'SaaS Platform',
+    compareRules: 'Rule Management',
+    compareRulesOpen: 'In-memory, manual',
+    compareRulesSaaS: 'Admin + 55 templates',
+    compareCalc: 'Calculation',
+    compareCalcOpen: 'Pass full rules',
+    compareCalcSaaS: 'promotion_codes / smart',
+    compareTenant: 'Multi-tenant',
+    compareTenantOpen: 'None',
+    compareTenantSaaS: 'Full isolation',
+    compareRefund: 'Refund',
+    compareRefundOpen: 'None',
+    compareRefundSaaS: 'Snapshot + reverse',
+    compareMonitor: 'Monitoring',
+    compareMonitorOpen: 'None',
+    compareMonitorSaaS: 'Audit + dashboard',
+    compareCoupon: 'Coupons',
+    compareCouponOpen: 'None',
+    compareCouponSaaS: 'Template / issue / redeem',
+    compareLink: 'Learn more',
     codeRequired: 'Rule code is required', codePlaceholder: 'Code (e.g. PROMO001)',
     confirmDelete: 'Delete this rule?',
   }
@@ -704,6 +780,7 @@ createApp({
       apiResponse: null,
       ruleIdCounter: 0,
       toast: { show: false, message: '', type: 'info', timer: null },
+      showCompare: false,
     };
   },
   computed: {

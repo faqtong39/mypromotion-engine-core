@@ -158,13 +158,16 @@ This repository contains the **core calculation engine only**.
 
 For the complete SaaS platform with:
 
-- Admin dashboard & rule management UI
-- Multi-tenant isolation
-- Dynamic user segmentation & product pools
-- Trace/snapshot persistence & refund execution
-- Real-time monitoring & audit logs
+- **Admin dashboard & rule management UI** — 55 promotion templates, visual rule editor, conflict detection
+- **Multi-tenant isolation** — tenant onboarding, approval workflow, quota management
+- **Dynamic user segmentation & product pools** — SQL-based segment editor, real-time pool refresh
+- **Trace/snapshot persistence & refund execution** — 90-day hot storage + gzip archive, reverse refund calculation
+- **Real-time monitoring & audit logs** — usage dashboard, rule change history, webhook push
+- **Coupon system** — template management, issuance, redemption, statistics
+- **Price protection** — cost-price and member-price guardrails
+- **Three-level rate limiting** — global / tenant / endpoint funnel throttling
 
-See [MyPromotion](https://your-saas-domain.com) — the commercial platform built on top of this open-source core.
+See **[MyPromotion](https://mp.tooly.run)** — the commercial platform built on top of this open-source core.
 
 ## License
 
