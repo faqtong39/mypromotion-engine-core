@@ -62,6 +62,11 @@ class RuleInput(BaseModel):
     stack_config: dict = {}
 
 
+# 模拟规则库（零数据库，纯内存），用于演示 promotion_codes 查询能力。
+# key 为 promotion_code（与 strategy_type 保持一致），value 为可直接构建 Rule 的字典。
+RULE_STORE: dict[str, dict] = {}
+
+
 class MutexGroupInput(BaseModel):
     code: str
     name: str = ""
@@ -81,13 +86,45 @@ class SpecialMutexRuleInput(BaseModel):
 
 class CalculateRequest(BaseModel):
     cart_items: list[CartItemInput]
-    rules: list[RuleInput]
+    rules: list[RuleInput] = []
+    promotion_codes: list[str] = []
     coupons: list[CouponInput] = []
     calculation_order: str = "promotions-first"
     shipping_fee: str = "0"
     user_group: str = ""
+    is_first_order: bool = False
     mutex_groups: list[MutexGroupInput] = []
     special_mutex_rules: list[SpecialMutexRuleInput] = []
+
+
+@app.get("/api/rules")
+def list_rules():
+    return list(RULE_STORE.values())
+
+
+@app.post("/api/rules")
+def save_rule(rule: RuleInput):
+    code = (rule.promotion_code or rule.strategy_type).strip()
+    if not code:
+        return {"error": "promotion_code or strategy_type required"}, 400
+    RULE_STORE[code] = {
+        "promotion_code": code,
+        "strategy_type": rule.strategy_type,
+        "priority": rule.priority,
+        "conditions": rule.conditions,
+        "actions": rule.actions,
+        "scopes": rule.scopes,
+        "stack_config": rule.stack_config or {},
+    }
+    return {"code": code, "message": "saved"}
+
+
+@app.delete("/api/rules/{code}")
+def delete_rule(code: str):
+    if code in RULE_STORE:
+        del RULE_STORE[code]
+        return {"message": "deleted"}
+    return {"error": "not found"}, 404
 
 
 def _to_decimal(value) -> Decimal:
@@ -152,6 +189,29 @@ def calculate(req: CalculateRequest):
             stack_config=r.stack_config,
         ))
 
+    # promotion_codes 处理：若 rules 为空则从模拟规则库加载；若已有 rules 则按 codes 过滤
+    if req.promotion_codes:
+        if not req.rules:
+            for code in req.promotion_codes:
+                tpl = RULE_STORE.get(code)
+                if not tpl:
+                    continue
+                conditions = [RuleCondition(condition_type=c.get("condition_type", ""), config=dict(c.get("config", {}))) for c in tpl["conditions"]]
+                actions = [RuleAction(action_type=a.get("action_type", ""), config=dict(a.get("config", {}))) for a in tpl["actions"]]
+                scopes = [RuleScope(scope_type=s.get("scope_type", ""), config=dict(s.get("config", {}))) for s in tpl["scopes"]]
+                rules.append(Rule(
+                    promotion_code=tpl["promotion_code"],
+                    strategy_type=tpl["strategy_type"],
+                    priority=tpl["priority"],
+                    conditions=conditions,
+                    actions=actions,
+                    scopes=scopes,
+                    stack_config=tpl.get("stack_config", {}),
+                ))
+        else:
+            codes = set(req.promotion_codes)
+            rules = [r for r in rules if r.promotion_code in codes]
+
     order_map = {
         "promotions-first": ["promotions", "coupons"],
         "coupons-first": ["coupons", "promotions"],
@@ -175,6 +235,7 @@ def calculate(req: CalculateRequest):
         user_group=req.user_group or None,
         calculation_order=calculation_order,
         used_coupons=used_coupons,
+        is_first_order=req.is_first_order,
     )
 
     from promotion_engine.types import MutexGroup, SpecialMutexRule

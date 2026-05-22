@@ -193,64 +193,76 @@
     <aside class="left-col">
       <!-- 促销规则 -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="justify-content:space-between">
           <div class="card-title">{{ t.rules }}</div>
-          <button class="btn btn-primary btn-sm" @click="addRule()">+ {{ t.addRule }}</button>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm" :class="ruleTab==='create'?'btn-primary':'btn-ghost'" @click="ruleTab='create'">{{ t.tabCreate }}</button>
+            <button class="btn btn-sm" :class="ruleTab==='list'?'btn-primary':'btn-ghost'" @click="ruleTab='list'">{{ t.tabList }}</button>
+          </div>
         </div>
         <div class="card-body">
-          <div v-for="(rule, index) in rules" :key="rule.id" class="rule-card">
-            <div class="rule-header">
-              <span class="rule-title">{{ ACTION_TYPES.find(a => a.value === rule.actType)?.label || rule.name || t.unknownRule }}</span>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="form-row" style="margin-bottom:0;flex:none">
-                  <label style="min-width:auto">{{ t.priority }}</label>
-                  <input v-model.number="rule.priority" type="number" min="0" max="999" style="width:60px;flex:none">
-                </div>
-                <button class="btn btn-danger btn-sm" @click="removeRule(index)">{{ t.delete }}</button>
+          <!-- 规则列表 Tab -->
+          <template v-if="ruleTab==='list'">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div v-for="r in ruleStore" :key="r.promotion_code" style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--gray-200);border-radius:6px;background:#fafafa">
+                <code style="font-size:12px;background:#f3f4f6;padding:2px 6px;border-radius:4px;flex:none">{{ r.promotion_code }}</code>
+                <span style="font-size:13px;flex:1">{{ codeLabel(r) }}</span>
+                <span style="font-size:12px;color:var(--gray-500);flex:none">P{{ r.priority }}</span>
+                <button class="btn btn-danger btn-sm" @click="deleteRuleFromStore(r.promotion_code)">{{ t.delete }}</button>
               </div>
+              <div v-if="ruleStore.length===0" class="empty-state">{{ t.emptyStore }}</div>
             </div>
-            <div class="rule-section">
-              <div class="rule-section-title">{{ t.ruleCondition }}</div>
-              <div class="form-row">
-                <select v-model="rule.condType" style="flex:1.2" @change="onCondChange(rule)">
+          </template>
+
+          <!-- 新建规则 Tab -->
+          <template v-if="ruleTab==='create'">
+            <div class="rule-card" style="margin:0">
+              <div class="form-row" style="margin-bottom:6px">
+                <input v-model="newRule.promotion_code" :placeholder="t.codePlaceholder" style="flex:1">
+                <input v-model.number="newRule.priority" type="number" min="0" max="999" :placeholder="t.priority" style="width:70px;flex:none">
+              </div>
+              <div class="form-row" style="margin-bottom:6px">
+                <select v-model="newRule.condType" style="flex:1">
                   <option v-for="c in COND_TYPES" :key="c.value" :value="c.value">{{ c.label }}</option>
                 </select>
-                <input v-show="condHasParam(rule.condType)" v-model="rule.condParam" :placeholder="condPlaceholder(rule.condType)" style="flex:1">
+                <input v-show="condHasParam(newRule.condType)" v-model="newRule.condParam" :placeholder="condPlaceholder(newRule.condType)" style="flex:1">
               </div>
-            </div>
-            <div class="rule-section">
-              <div class="rule-section-title">{{ t.ruleAction }}</div>
-              <div class="form-row">
-                <select v-model="rule.actType" style="flex:1.2" @change="onActionChange(rule)">
+              <div class="form-row" style="margin-bottom:6px">
+                <select v-model="newRule.actType" style="flex:1">
                   <option v-for="a in ACTION_TYPES" :key="a.value" :value="a.value">{{ a.label }}</option>
                 </select>
-                <input v-show="actHasInput(rule.actType)" v-model="rule.actParam" :placeholder="actPlaceholder(rule.actType)" style="flex:1">
+                <input v-show="actHasInput(newRule.actType)" v-model="newRule.actParam" :placeholder="actPlaceholder(newRule.actType)" style="flex:1">
               </div>
-              <div v-show="isTiered(rule.actType)" class="tiered-form">
-                <div style="font-size:12px; color:var(--gray-500); margin-bottom:6px;">{{ t.tierConfig }}</div>
-                <div v-for="(row, idx) in rule.tieredRows" :key="idx" class="form-row tiered-row">
-                  <input v-model="row.a" type="number" :placeholder="tieredLabelA(rule.actType)" style="flex:1">
-                  <input v-model="row.b" type="number" :placeholder="tieredLabelB(rule.actType)" style="flex:1">
-                  <button class="btn btn-danger btn-sm" @click="removeTieredRow(rule, idx)">{{ t.delete }}</button>
-                </div>
-                <button class="btn btn-ghost btn-sm" style="margin-top:6px;" @click="addTieredRow(rule)">+ {{ t.addTier }}</button>
-              </div>
-            </div>
-            <div class="rule-section">
-              <div class="rule-section-title">{{ t.scope }}</div>
-              <div class="form-row">
-                <select v-model="rule.scopeType" style="flex:1.2" @change="onScopeChange(rule)">
+              <div class="form-row" style="margin-bottom:0">
+                <select v-model="newRule.scopeType" style="flex:1">
                   <option v-for="s in SCOPE_TYPES" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
-                <input v-show="scopeHasParam(rule.scopeType)" v-model="rule.scopeParam" :placeholder="scopePlaceholder(rule.scopeType)" style="flex:1">
+                <input v-show="scopeHasParam(newRule.scopeType)" v-model="newRule.scopeParam" :placeholder="scopePlaceholder(newRule.scopeType)" style="flex:1">
+              </div>
+              <button class="btn btn-primary btn-sm" style="margin-top:10px" @click="saveRuleToStore()">{{ t.saveRule }}</button>
+            </div>
+          </template>
+
+          <!-- 互斥组 -->
+          <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--gray-200)">
+            <label style="min-width:auto;font-weight:600;display:block;margin-bottom:8px">{{ t.mutexGroups }}</label>
+            <div class="form-row" style="margin-bottom:6px">
+              <select v-model="mutexGroup.selectedRule" style="flex:1" @change="addRuleToMutexGroup">
+                <option value="">{{ t.selectRule }}</option>
+                <option v-for="r in availableMutexRules" :key="r.name" :value="r.name">{{ r.displayName }} (P{{ r.priority }})</option>
+              </select>
+            </div>
+            <div class="cart-coupon-list" v-if="mutexGroup.ruleIds.length">
+              <div class="cart-coupon-tag" v-for="(rid, ridx) in mutexGroup.ruleIds" :key="rid">
+                {{ ruleDisplayMap[rid] || rid }} (P{{ (ruleStore.find(x => x.promotion_code === rid) || {}).priority || '' }})
+                <button class="coupon-remove" @click="removeRuleFromMutexGroup(ridx)">×</button>
               </div>
             </div>
           </div>
-          <div v-if="rules.length===0" class="empty-state">{{ t.emptyRules }}</div>
         </div>
       </div>
 
-      <!-- 计算设置 -->
+      <!-- 计算参数 -->
       <div class="card">
         <div class="card-header"><div class="card-title">{{ t.settings }}</div></div>
         <div class="card-body">
@@ -268,21 +280,21 @@
             <label style="min-width:auto">{{ t.userGroup }}</label>
             <input v-model="settings.userGroup" placeholder="member" style="flex:1">
           </div>
+          <div class="form-row" style="margin-bottom:10px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:auto">
+              <input type="checkbox" v-model="settings.isFirstOrder" style="width:auto;flex:none;height:auto"> {{ t.isFirstOrder }}
+            </label>
+          </div>
 
-          <!-- 互斥组 -->
-          <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--gray-200)">
-            <label style="min-width:auto;font-weight:600;display:block;margin-bottom:8px">{{ t.mutexGroups }}</label>
-            <div class="form-row" style="margin-bottom:6px">
-              <select v-model="mutexGroup.selectedRule" style="flex:1" @change="addRuleToMutexGroup">
-                <option value="">{{ t.selectRule }}</option>
-                <option v-for="r in availableMutexRules" :key="r.name" :value="r.name">{{ r.displayName }} (P{{ r.priority }})</option>
-              </select>
-            </div>
-            <div class="cart-coupon-list" v-if="mutexGroup.ruleIds.length">
-              <div class="cart-coupon-tag" v-for="(rid, ridx) in mutexGroup.ruleIds" :key="rid">
-                {{ ruleDisplayMap[rid] || rid }} (P{{ (rules.find(x => x.name === rid) || {}).priority || '' }})
-                <button class="coupon-remove" @click="removeRuleFromMutexGroup(ridx)">×</button>
-              </div>
+          <!-- 生效规则 -->
+          <div style="padding-top:10px;border-top:1px dashed var(--gray-200)">
+            <label style="min-width:auto;font-weight:600;display:block;margin-bottom:8px">{{ t.activeRules }}</label>
+            <div v-if="ruleStore.length===0" class="empty-state" style="margin-top:6px">{{ t.emptyStore }}</div>
+            <div v-else style="display:flex;flex-wrap:wrap;gap:6px">
+              <label v-for="c in ruleStore" :key="c.promotion_code" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px" :style="promotionCodes.includes(c.promotion_code)?'border-color:var(--primary);background:#f0f9ff':''">
+                <input type="checkbox" :value="c.promotion_code" v-model="promotionCodes" style="width:auto;flex:none">
+                <code>{{ c.promotion_code }}</code>
+              </label>
             </div>
           </div>
         </div>
@@ -450,6 +462,20 @@
               </div>
             </div>
           </div>
+
+          <!-- API 调用示例 -->
+          <div class="order-section" style="margin-top:14px;background:var(--gray-50);">
+            <div class="order-section-title">API 调用示例</div>
+            <div style="font-size:11px;color:var(--gray-500);margin-bottom:6px;">POST /api/calculate</div>
+            <details style="margin-bottom:8px;">
+              <summary style="font-size:12px;color:var(--primary);cursor:pointer;font-weight:500;">请求参数 JSON</summary>
+              <pre style="margin-top:6px;background:#1e293b;color:#e2e8f0;padding:10px;border-radius:6px;font-size:11px;overflow-x:auto;"><code>{{ apiRequest }}</code></pre>
+            </details>
+            <details>
+              <summary style="font-size:12px;color:var(--success);cursor:pointer;font-weight:500;">响应结果 JSON</summary>
+              <pre style="margin-top:6px;background:#1e293b;color:#e2e8f0;padding:10px;border-radius:6px;font-size:11px;overflow-x:auto;"><code>{{ apiResponse }}</code></pre>
+            </details>
+          </div>
         </template>
         <div v-else class="empty-state">{{ t.clickCalculate }}</div>
       </div>
@@ -499,10 +525,11 @@ const I18N = {
     scope: '作用范围',
     priority: '优先级',
     delete: '删除',
-    settings: '计算设置',
+    settings: '计算参数',
     calculationOrder: '计算顺序',
     shippingFee: '运费',
     userGroup: '用户组',
+    isFirstOrder: '首单用户',
     promotionsFirst: '促销先，券后',
     couponsFirst: '券先，促销后',
     optimal: '自动最优',
@@ -526,6 +553,14 @@ const I18N = {
     presetMutex: '互斥', presetCoupon: '促销+券', presetOptimal: '最优', presetTiered: '阶梯价',
     mutexGroups: '互斥组', selectRule: '选择规则', unknownRule: '未知规则',
     freeShippingApplied: '免运费',
+    codesHint: '从规则库中勾选要应用的促销编码',
+    emptyCodes: '尚未选择任何促销编码',
+    emptyStore: '规则库为空，请在下方创建',
+    activeRules: '生效规则',
+    tabList: '规则列表', tabCreate: '新建规则',
+    createRule: '新建规则', saveRule: '保存到规则库', saveOk: '保存成功',
+    codeRequired: '请输入规则编码', codePlaceholder: '规则编码（如 PROMO001）',
+    confirmDelete: '确定删除该规则？',
   },
   en: {
     title: 'Promotion Engine Demo',
@@ -562,7 +597,7 @@ const I18N = {
     scope: 'Scope',
     priority: 'Priority',
     delete: 'Delete',
-    settings: 'Settings',
+    settings: 'Context',
     calculationOrder: 'Order',
     shippingFee: 'Shipping',
     userGroup: 'User Group',
@@ -589,6 +624,14 @@ const I18N = {
     presetMutex: 'Mutex', presetCoupon: 'Promo+Coupon', presetOptimal: 'Optimal', presetTiered: 'Tiered',
     mutexGroups: 'Mutex Groups', selectRule: 'Select Rule', unknownRule: 'Unknown Rule',
     freeShippingApplied: 'Free Shipping',
+    codesHint: 'Select promotion codes from the rule store to apply',
+    emptyCodes: 'No promotion codes selected',
+    emptyStore: 'Rule store is empty. Create one below.',
+    activeRules: 'Active Rules',
+    tabList: 'Rule List', tabCreate: 'New Rule',
+    createRule: 'New Rule', saveRule: 'Save to Store', saveOk: 'Saved',
+    codeRequired: 'Rule code is required', codePlaceholder: 'Code (e.g. PROMO001)',
+    confirmDelete: 'Delete this rule?',
   }
 };
 
@@ -616,11 +659,22 @@ createApp({
         { code: 'DISCOUNT10', label: 'couponDiscount', type: 'percentage', value: '10', minOrder: '0', selected: false },
       ],
       rules: [],
-      settings: { calculationOrder:'promotions-first', shippingFee:'0', userGroup:'' },
+      promotionCodes: [],
+      ruleStore: [],
+      ruleTab: 'create',
+      newRule: {
+        promotion_code: '', strategy_type: 'full_reduction', priority: 10,
+        condType: 'min_order_amount', condParam: '',
+        actType: 'fixed_amount_reduction', actParam: '',
+        scopeType: 'all_items', scopeParam: '',
+      },
+      settings: { calculationOrder:'promotions-first', shippingFee:'0', userGroup:'', isFirstOrder:false },
       mutexGroup: { selectedRule: '', ruleIds: [] },
       showCheckout: false,
       checkoutLoading: false,
       checkoutResult: null,
+      apiRequest: null,
+      apiResponse: null,
       ruleIdCounter: 0,
     };
   },
@@ -681,7 +735,8 @@ createApp({
     },
     availableMutexRules() {
       const used = new Set(this.mutexGroup.ruleIds || []);
-      return this.rules
+      return this.ruleStore
+        .map(r => ({ name: r.promotion_code, actType: r.strategy_type || r.promotion_code, priority: r.priority || 0 }))
         .filter(r => r.name && !used.has(r.name))
         .map(r => {
           const label = this.ACTION_TYPES.find(a => a.value === r.actType)?.label || r.name || this.t.unknownRule;
@@ -690,21 +745,22 @@ createApp({
     },
     ruleDisplayMap() {
       const map = {};
-      this.rules.forEach(r => {
-        map[r.name] = this.ACTION_TYPES.find(a => a.value === r.actType)?.label || r.name || this.t.unknownRule;
+      this.ruleStore.forEach(r => {
+        map[r.promotion_code] = this.ACTION_TYPES.find(a => a.value === r.strategy_type)?.label || r.promotion_code;
       });
       return map;
     },
     checkoutRuleLabelMap() {
       const map = {};
-      this.rules.forEach(r => {
-        map[r.name] = this.ACTION_TYPES.find(a => a.value === r.actType)?.label || r.name || this.t.unknownRule;
+      this.ruleStore.forEach(r => {
+        map[r.promotion_code] = this.ACTION_TYPES.find(a => a.value === r.strategy_type)?.label || r.promotion_code;
       });
       return map;
     },
   },
   mounted() {
     this.loadPreset('default');
+    this.loadRules();
   },
   methods: {
     addToCart(product) {
@@ -812,9 +868,16 @@ createApp({
       if (rule.condType === 'is_first_order') {
         conditions.push({ condition_type: rule.condType, config: {} });
       } else if (rule.condType && rule.condParam !== '') {
-        const val = isNaN(rule.condParam) ? rule.condParam : parseFloat(rule.condParam);
-        const key = this.COND_TYPES.find(c => c.value === rule.condType)?.param || 'value';
-        conditions.push({ condition_type: rule.condType, config: { [key]: val } });
+        if (rule.condType === 'user_group') {
+          conditions.push({ condition_type: rule.condType, config: { group_ids: [String(rule.condParam)] } });
+        } else if (rule.condType === 'weekday') {
+          const days = String(rule.condParam).split(',').map(s => parseInt(s.trim())).filter(n => n >= 1 && n <= 7);
+          conditions.push({ condition_type: rule.condType, config: { days } });
+        } else {
+          const val = isNaN(rule.condParam) ? rule.condParam : parseFloat(rule.condParam);
+          const key = this.COND_TYPES.find(c => c.value === rule.condType)?.param || 'value';
+          conditions.push({ condition_type: rule.condType, config: { [key]: val } });
+        }
       }
       const actions = [];
       if (rule.actType === 'free_shipping') {
@@ -847,6 +910,78 @@ createApp({
       }
       return { conditions, actions, scopes };
     },
+    codeLabel(r) {
+      const act = r.actions?.[0]?.action_type || r.strategy_type || r.promotion_code;
+      const cond = r.conditions?.[0]?.condition_type || '';
+      const actLabel = this.ACTION_TYPES.find(a => a.value === act)?.label || act;
+      const condLabel = this.COND_TYPES.find(c => c.value === cond)?.label || cond;
+      return actLabel + (condLabel ? ' · ' + condLabel : '');
+    },
+    async loadRules() {
+      try {
+        const res = await fetch('/api/rules');
+        this.ruleStore = await res.json();
+      } catch (e) { console.error('loadRules failed', e); }
+    },
+    async saveRuleToStore() {
+      const code = (this.newRule.promotion_code || this.newRule.strategy_type).trim();
+      if (!code) { alert(this.t.codeRequired); return; }
+      const conditions = [];
+      if (this.newRule.condType) {
+        const config = {};
+        if (this.condHasParam(this.newRule.condType) && this.newRule.condParam !== '') {
+          const key = this.COND_TYPES.find(c => c.value === this.newRule.condType)?.param || 'value';
+          config[key] = isNaN(this.newRule.condParam) ? this.newRule.condParam : parseFloat(this.newRule.condParam);
+          if (key === 'days' && typeof config[key] === 'string') config[key] = config[key].split(',').map(s => parseInt(s.trim())).filter(Number.isFinite);
+          if (key === 'group') config[key] = [config[key]];
+        }
+        conditions.push({ condition_type: this.newRule.condType, config });
+      }
+      const actions = [];
+      if (this.newRule.actType) {
+        const config = {};
+        if (this.actHasInput(this.newRule.actType) && this.newRule.actParam !== '') {
+          const key = this.ACTION_TYPES.find(a => a.value === this.newRule.actType)?.param || 'value';
+          config[key] = isNaN(this.newRule.actParam) ? this.newRule.actParam : parseFloat(this.newRule.actParam);
+        }
+        actions.push({ action_type: this.newRule.actType, config });
+      }
+      const scopes = [{ scope_type: this.newRule.scopeType, config: {} }];
+      if (this.scopeHasParam(this.newRule.scopeType) && this.newRule.scopeParam !== '') {
+        const key = this.SCOPE_TYPES.find(s => s.value === this.newRule.scopeType)?.param || 'value';
+        const configKey = this.newRule.scopeType === 'except_items' ? 'except_skus' : key;
+        if (key === 'skus' || key === 'category_ids' || key === 'tags') {
+          scopes[0].config[configKey] = this.newRule.scopeParam.split(',').map(s => s.trim()).filter(Boolean);
+        } else {
+          scopes[0].config[configKey] = this.newRule.scopeParam;
+        }
+      }
+      const payload = {
+        promotion_code: code,
+        strategy_type: this.newRule.strategy_type,
+        priority: Number.isFinite(this.newRule.priority) ? this.newRule.priority : 0,
+        conditions, actions, scopes,
+        stack_config: {},
+      };
+      try {
+        const res = await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        await this.loadRules();
+        this.newRule = { promotion_code: '', strategy_type: 'full_reduction', priority: 10, condType: 'min_order_amount', condParam: '', actType: 'fixed_amount_reduction', actParam: '', scopeType: 'all_items', scopeParam: '' };
+        alert(this.t.saveOk);
+      } catch (e) { alert('Save failed: ' + e.message); }
+    },
+    async deleteRuleFromStore(code) {
+      if (!confirm(this.t.confirmDelete)) return;
+      try {
+        const res = await fetch('/api/rules/' + encodeURIComponent(code), { method: 'DELETE' });
+        await res.json();
+        this.promotionCodes = this.promotionCodes.filter(c => c !== code);
+        this.mutexGroup.ruleIds = this.mutexGroup.ruleIds.filter(c => c !== code);
+        await this.loadRules();
+      } catch (e) { alert('Delete failed: ' + e.message); }
+    },
     getRules() {
       return this.rules.map(rule => {
         const j = this.buildRuleJson(rule);
@@ -867,7 +1002,8 @@ createApp({
           cart_items: this.cart.map(item => ({
             sku: item.sku, price: String(item.price), qty: Number(item.qty) || 1, category_id: item.categoryId || '',
           })),
-          rules: this.getRules(),
+          rules: [],
+          promotion_codes: this.promotionCodes,
           coupons: this.selectedCoupons.map(c => {
             let type = c.type;
             let value = c.value;
@@ -884,16 +1020,19 @@ createApp({
           calculation_order: this.settings.calculationOrder,
           shipping_fee: String(this.settings.shippingFee),
           user_group: this.settings.userGroup,
+          is_first_order: this.settings.isFirstOrder,
           mutex_groups: this.mutexGroup.ruleIds.length ? [{
             code: 'default', name: 'default', strategies: [],
             rule_ids: this.mutexGroup.ruleIds,
             is_active: true,
           }] : [],
         };
+        this.apiRequest = JSON.stringify(payload, null, 2);
         const res = await fetch('/api/calculate', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
         });
         this.checkoutResult = await res.json();
+        this.apiResponse = JSON.stringify(this.checkoutResult, null, 2);
       } catch (e) {
         alert('Request failed: ' + e.message);
       } finally {
@@ -915,44 +1054,56 @@ createApp({
     removeRuleFromMutexGroup(index) {
       this.mutexGroup.ruleIds.splice(index, 1);
     },
-    loadPreset(name) {
+    async savePresetRule(payload) {
+      try {
+        await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        await this.loadRules();
+      } catch (e) { console.error('savePresetRule failed', e); }
+    },
+    async loadPreset(name) {
       this.cart = [];
       this.cartCoupons = [
         { code: 'REDUCE10', label: 'couponReduce', type: 'fixed_amount', value: '10', minOrder: '0', selected: false },
         { code: 'DISCOUNT10', label: 'couponDiscount', type: 'percentage', value: '10', minOrder: '0', selected: false },
       ];
-      this.rules = []; this.ruleIdCounter = 0; this.mutexGroup = { selectedRule: '', ruleIds: [] };
+      this.promotionCodes = []; this.mutexGroup = { selectedRule: '', ruleIds: [] };
       if (name === 'full_reduction') {
         this.products.forEach((p,i) => { if(i<2) this.addToCart(p); });
-        this.addRule({strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:300}}], actions:[{config:{amount:50}}]});
+        await this.savePresetRule({promotion_code:'preset_full_reduction', strategy_type:'full_reduction', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:300,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:50}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        this.promotionCodes = ['preset_full_reduction'];
       } else if (name === 'percentage') {
         this.addToCart(this.products[1]);
-        this.addRule({strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:90}}]});
+        await this.savePresetRule({promotion_code:'preset_percentage', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:90}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        this.promotionCodes = ['preset_percentage'];
       } else if (name === 'mutex') {
         this.addToCart(this.products[1]);
         this.cart[0].qty = 1; this.cart[0].price = 500;
-        this.addRule({strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:400}}], actions:[{config:{amount:100}}]});
-        this.addRule({strategy_type:'full_reduction', priority:90, conditions:[{config:{amount:400}}], actions:[{config:{amount:50}}]});
+        await this.savePresetRule({promotion_code:'preset_mutex_a', strategy_type:'full_reduction', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:400,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:100}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        await this.savePresetRule({promotion_code:'preset_mutex_b', strategy_type:'full_reduction', priority:90, conditions:[{condition_type:'min_order_amount',config:{amount:400,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:50}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        this.promotionCodes = ['preset_mutex_a', 'preset_mutex_b'];
+        this.mutexGroup.ruleIds = ['preset_mutex_a', 'preset_mutex_b'];
       } else if (name === 'coupon') {
         this.addToCart(this.products[1]);
         this.cart[0].qty = 1; this.cart[0].price = 400;
         this.cartCoupons.find(c => c.code === 'REDUCE10').selected = true;
-        this.addRule({strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:80}}]});
+        await this.savePresetRule({promotion_code:'preset_coupon', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:80}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        this.promotionCodes = ['preset_coupon'];
         this.settings.calculationOrder = 'promotions-first';
       } else if (name === 'optimal') {
         this.addToCart(this.products[1]);
         this.cart[0].qty = 1; this.cart[0].price = 400;
         this.cartCoupons.find(c => c.code === 'REDUCE10').selected = true; this.cartCoupons.find(c => c.code === 'REDUCE10').value = '50';
-        this.addRule({strategy_type:'full_discount', priority:100, conditions:[{config:{amount:0}}], actions:[{config:{percentage:80}}]});
+        await this.savePresetRule({promotion_code:'preset_optimal', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:80}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        this.promotionCodes = ['preset_optimal'];
         this.settings.calculationOrder = 'optimal';
       } else if (name === 'tiered') {
         this.addToCart(this.products[0]);
         this.cart[0].qty = 5;
-        this.addRule({strategy_type:'tiered_price', priority:100, conditions:[], actions:[{config:{tiers:[{quantity:1, amount:10}, {quantity:3, amount:20}, {quantity:5, amount:30}]}}]});
+        await this.savePresetRule({promotion_code:'preset_tiered', strategy_type:'tiered_price', priority:100, conditions:[], actions:[{action_type:'tiered_price',config:{tiers:[{min_qty:1,max_qty:2,price:'50'},{min_qty:3,max_qty:5,price:'45'},{min_qty:6,price:'40'}]}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        this.promotionCodes = ['preset_tiered'];
       } else if (name === 'default') {
         this.addToCart(this.products[0]);
         this.addToCart(this.products[3]);
-        this.addRule({strategy_type:'full_reduction', priority:100, conditions:[{config:{amount:300}}], actions:[{config:{amount:50}}]});
       }
     },
   }
