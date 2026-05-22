@@ -28,6 +28,7 @@ from pydantic import BaseModel
 
 from promotion_engine import Engine, Cart, CartItem, Rule
 from promotion_engine.types import CalculationContext, RuleAction, RuleCondition, RuleScope, UsedCoupon
+from promotion_engine.refund import calculate_item_discounts, calculate_refund
 
 app = FastAPI(title="Promotion Engine Demo")
 
@@ -268,6 +269,11 @@ def calculate(req: CalculateRequest):
     )
     result = engine.calculate(context, rules)
 
+    # 计算商品级分摊明细（用于退款演示）
+    order_items = [{"sku": item.sku, "price": str(item.price), "quantity": item.quantity} for item in cart.items]
+    total_discount = Decimal(str(result.total_discount))
+    item_discounts = calculate_item_discounts(order_items, total_discount, strategy="proportional")
+
     def decimal_default(obj):
         if isinstance(obj, Decimal):
             return str(obj)
@@ -291,6 +297,7 @@ def calculate(req: CalculateRequest):
             {"code": c.get("code", ""), "coupon_type": c.get("coupon_type", ""), "discount": c.get("discount", "0")}
             for c in result.used_coupons
         ],
+        "item_discounts": item_discounts,
         "summary": {
             "original_amount": result.original_amount,
             "total_discount": result.total_discount,
@@ -301,6 +308,37 @@ def calculate(req: CalculateRequest):
     }, default=decimal_default))
 
 
+class RefundRequest(BaseModel):
+    order_items: list = []
+    item_discounts: list = []
+    refund_items: list = []
+    total_paid: str = "0"
+    refunded_total: str = "0"
+    strategy: str = "proportional"
+
+
+@app.post("/api/refund")
+def refund(req: RefundRequest):
+    total_paid = _to_decimal(req.total_paid)
+    refunded_total = _to_decimal(req.refunded_total)
+    # 如果前端没传 item_discounts，根据策略重新计算
+    item_discounts = req.item_discounts
+    if not item_discounts and req.order_items:
+        item_discounts = calculate_item_discounts(
+            req.order_items,
+            sum(Decimal(str(i.get("original_price", "0"))) for i in req.order_items) - total_paid,
+            strategy=req.strategy,
+        )
+    result = calculate_refund(
+        order_items=req.order_items,
+        item_discounts=item_discounts,
+        refund_items=req.refund_items,
+        total_paid=total_paid,
+        refunded_total=refunded_total,
+    )
+    return result
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
@@ -308,17 +346,11 @@ def health():
 
 def main():
     import uvicorn
-    import webbrowser
-    from threading import Timer
 
     host = "127.0.0.1"
     port = 8000
     url = f"http://{host}:{port}/demo/"
 
-    def open_browser():
-        webbrowser.open(url)
-
-    Timer(1.5, open_browser).start()
     print(f"\nPromotion Engine Demo starting at {url}\n")
     uvicorn.run(app, host=host, port=port)
 

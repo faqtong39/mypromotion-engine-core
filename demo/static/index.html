@@ -103,12 +103,17 @@
   .mutex-tag-remove:hover { color: var(--danger); }
 
   /* 能力对比表格 */
-  .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .compare-table th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--gray-200); color: var(--gray-500); font-weight: 500; }
-  .compare-table td { padding: 6px 4px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
-  .compare-table td:first-child { color: var(--gray-700); font-weight: 500; width: 70px; }
-  .compare-table td:nth-child(2) { color: var(--gray-500); }
-  .compare-table td:nth-child(3) { color: var(--primary); font-weight: 500; }
+  .compare-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; border-radius: 8px; overflow: hidden; }
+  .compare-table th { text-align: left; padding: 8px 10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .compare-table th:first-child { background: #f3f4f6; color: var(--gray-600); }
+  .compare-table th:nth-child(2) { background: #f3f4f6; color: var(--gray-500); }
+  .compare-table th:nth-child(3) { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; }
+  .compare-table td { padding: 8px 10px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+  .compare-table td:first-child { color: var(--gray-700); font-weight: 500; width: 80px; background: #fafafa; }
+  .compare-table td:nth-child(2) { color: var(--gray-500); background: #fafafa; }
+  .compare-table td:nth-child(3) { color: #1e40af; font-weight: 500; background: #eff6ff; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { filter: brightness(0.97); }
 
   /* 生效规则 checkbox 去默认蓝框 */
   /* 表单 checkbox 去默认蓝框 */
@@ -192,7 +197,11 @@
   .empty-state { text-align: center; padding: 36px 20px; color: var(--gray-400); font-size: 13px; }
 
   /* 促销配置区折叠 */
-  .left-col { position: sticky; top: 20px; }
+  .left-col { position: sticky; top: 20px; background: linear-gradient(180deg, #f5f7ff 0%, #f0f4ff 100%); border-radius: var(--radius-lg); padding: 16px; border: 1px solid #e0e7ff; }
+  .right-col { background: linear-gradient(180deg, #fffaf5 0%, #fff7ed 100%); border-radius: var(--radius-lg); padding: 16px; border: 1px solid #ffedd5; }
+  .col-tag { font-size: 12px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; }
+  .col-tag.engine { color: #4338ca; }
+  .col-tag.mall { color: #c2410c; }
 
   /* Toast 提示 */
   .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
@@ -224,6 +233,7 @@
   <div class="main-grid">
     <!-- 左侧：促销配置 -->
     <aside class="left-col">
+      <div class="col-tag engine"><span style="font-size:14px">🧩</span> {{ t.engineLabel }}</div>
       <!-- 促销规则 -->
       <div class="card">
         <div class="card-header" style="justify-content:space-between">
@@ -297,6 +307,21 @@
         </div>
       </div>
 
+      <!-- 售后策略配置 -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">{{ t.refundConfig }}</div></div>
+        <div class="card-body">
+          <div class="form-row" style="margin-bottom:0">
+            <label style="min-width:auto">{{ t.refundStrategy }}</label>
+            <select v-model="refundStrategy" style="flex:1">
+              <option value="proportional">{{ t.strategyProportional }}</option>
+              <option value="keep_discount">{{ t.strategyKeepDiscount }}</option>
+              <option value="full_refund_discount">{{ t.strategyFullRefund }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- 能力对比 -->
       <div class="card">
         <div class="card-header" style="cursor:pointer" @click="showCompare=!showCompare">
@@ -310,56 +335,23 @@
               <tr><td>{{ t.compareRules }}</td><td>{{ t.compareRulesOpen }}</td><td>{{ t.compareRulesSaaS }}</td></tr>
               <tr><td>{{ t.compareCalc }}</td><td>{{ t.compareCalcOpen }}</td><td>{{ t.compareCalcSaaS }}</td></tr>
               <tr><td>{{ t.compareTenant }}</td><td>{{ t.compareTenantOpen }}</td><td>{{ t.compareTenantSaaS }}</td></tr>
+              <tr><td>{{ t.compareUserGroup }}</td><td>{{ t.compareUserGroupOpen }}</td><td>{{ t.compareUserGroupSaaS }}</td></tr>
+              <tr><td>{{ t.compareProductPool }}</td><td>{{ t.compareProductPoolOpen }}</td><td>{{ t.compareProductPoolSaaS }}</td></tr>
+              <tr><td>{{ t.comparePriceProtect }}</td><td>{{ t.comparePriceProtectOpen }}</td><td>{{ t.comparePriceProtectSaaS }}</td></tr>
               <tr><td>{{ t.compareRefund }}</td><td>{{ t.compareRefundOpen }}</td><td>{{ t.compareRefundSaaS }}</td></tr>
-              <tr><td>{{ t.compareMonitor }}</td><td>{{ t.compareMonitorOpen }}</td><td>{{ t.compareMonitorSaaS }}</td></tr>
               <tr><td>{{ t.compareCoupon }}</td><td>{{ t.compareCouponOpen }}</td><td>{{ t.compareCouponSaaS }}</td></tr>
+              <tr><td>{{ t.compareMonitor }}</td><td>{{ t.compareMonitorOpen }}</td><td>{{ t.compareMonitorSaaS }}</td></tr>
             </tbody>
           </table>
           <a href="https://mp.tooly.run" target="_blank" class="btn btn-primary btn-sm" style="margin-top:10px;display:inline-block;text-decoration:none">{{ t.compareLink }} →</a>
         </div>
       </div>
 
-      <!-- 计算参数 -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">{{ t.settings }}</div></div>
-        <div class="card-body">
-          <div class="form-row">
-            <label>{{ t.calculationOrder }}</label>
-            <select v-model="settings.calculationOrder" style="flex:1">
-              <option value="promotions-first">{{ t.promotionsFirst }}</option>
-              <option value="coupons-first">{{ t.couponsFirst }}</option>
-              <option value="optimal">{{ t.optimal }}</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label>{{ t.shippingFee }}</label>
-            <input v-model="settings.shippingFee" placeholder="0" style="flex:1">
-            <label style="min-width:auto">{{ t.userGroup }}</label>
-            <input v-model="settings.userGroup" placeholder="member" style="flex:1">
-          </div>
-          <div class="form-row" style="margin-bottom:10px">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:auto">
-              <input type="checkbox" v-model="settings.isFirstOrder" style="width:auto;flex:none;height:auto;outline:none"> {{ t.isFirstOrder }}
-            </label>
-          </div>
-
-          <!-- 生效规则 -->
-          <div style="padding-top:10px;border-top:1px dashed var(--gray-200)">
-            <label style="min-width:auto;font-weight:600;display:block;margin-bottom:8px">{{ t.activeRules }}</label>
-            <div v-if="ruleStore.length===0" class="empty-state" style="margin-top:6px">{{ t.emptyStore }}</div>
-            <div v-else style="display:flex;flex-wrap:wrap;gap:6px">
-              <label v-for="c in ruleStore" :key="c.promotion_code" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px" :style="promotionCodes.includes(c.promotion_code)?'border-color:var(--primary);background:#f0f9ff':''">
-                <input type="checkbox" :value="c.promotion_code" v-model="promotionCodes" style="width:auto;flex:none">
-                <code>{{ c.promotion_code }}</code>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
     </aside>
 
     <!-- 右侧：商品 + 购物车 -->
     <main class="right-col">
+      <div class="col-tag mall"><span style="font-size:14px">🏬</span> {{ t.mallLabel }}</div>
       <!-- 商品展示 -->
       <div>
         <h2 class="section-title">{{ t.products }}</h2>
@@ -425,6 +417,41 @@
             </div>
           </div>
 
+          <!-- 计算上下文 -->
+          <div style="margin-top:12px;padding:12px;border:1px solid var(--gray-200);border-radius:8px;background:#fafafa">
+            <div style="font-size:13px;font-weight:600;color:var(--gray-700);margin-bottom:10px">⚙️ {{ t.settings }}</div>
+            <div class="form-row">
+              <label>{{ t.calculationOrder }}</label>
+              <select v-model="settings.calculationOrder" style="flex:1">
+                <option value="promotions-first">{{ t.promotionsFirst }}</option>
+                <option value="coupons-first">{{ t.couponsFirst }}</option>
+                <option value="optimal">{{ t.optimal }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>{{ t.shippingFee }}</label>
+              <input v-model="settings.shippingFee" placeholder="0" style="flex:1">
+              <label style="min-width:auto">{{ t.userGroup }}</label>
+              <input v-model="settings.userGroup" placeholder="member" style="flex:1">
+            </div>
+            <div class="form-row" style="margin-bottom:0">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:auto">
+                <input type="checkbox" v-model="settings.isFirstOrder" style="width:auto;flex:none;height:auto;outline:none"> {{ t.isFirstOrder }}
+              </label>
+            </div>
+            <!-- 生效规则 -->
+            <div style="padding-top:10px;border-top:1px dashed var(--gray-200);margin-top:10px">
+              <label style="min-width:auto;font-weight:600;display:block;margin-bottom:6px;font-size:12px">{{ t.activeRules }}</label>
+              <div v-if="ruleStore.length===0" class="empty-state" style="padding:8px;font-size:12px">{{ t.emptyStore }}</div>
+              <div v-else style="display:flex;flex-wrap:wrap;gap:6px">
+                <label v-for="c in ruleStore" :key="c.promotion_code" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 6px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;background:#fff" :style="promotionCodes.includes(c.promotion_code)?'border-color:var(--primary);background:#f0f9ff':''">
+                  <input type="checkbox" :value="c.promotion_code" v-model="promotionCodes" style="width:auto;flex:none">
+                  <code style="font-size:11px">{{ c.promotion_code }}</code>
+                </label>
+              </div>
+            </div>
+          </div>
+
           <!-- 汇总 -->
           <div class="cart-summary">
             <div class="cart-row">
@@ -439,7 +466,74 @@
           </div>
         </div>
       </div>
+
+      <!-- 订单列表 -->
+      <div class="cart-panel" style="margin-top:16px">
+        <h2 class="section-title">📦 {{ t.orderList }}</h2>
+        <div v-if="orders.length===0" class="empty-state" style="padding:20px">{{ t.emptyOrders }}</div>
+        <div v-else style="display:flex;flex-direction:column;gap:8px">
+          <div v-for="order in orders" :key="order.id" style="padding:10px;border:1px solid var(--gray-200);border-radius:8px;background:#fafafa">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <code style="font-size:12px;background:#f3f4f6;padding:2px 6px;border-radius:4px">{{ order.id }}</code>
+              <span style="font-size:12px;color:var(--gray-500)">{{ order.time }}</span>
+            </div>
+            <div style="font-size:13px;color:var(--gray-700);margin-bottom:4px">
+              <span v-for="(item, iidx) in order.items" :key="item.sku">{{ iidx>0?'，':'' }}{{ item.name }}×{{ item.qty }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:14px;font-weight:700;color:var(--primary)">¥{{ order.payable }}</span>
+              <button class="btn btn-sm" :class="order.status==='refunded'?'btn-ghost':'btn-primary'" @click="openAfterSales(order)">
+                {{ order.status==='refunded'?t.refunded:t.afterSales }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
+  </div>
+
+  <!-- 售后处理弹窗 -->
+  <div v-if="showAfterSales" class="modal-overlay" @click.self="showAfterSales=false">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h2>🔄 {{ t.afterSales }} {{ currentOrder?.id }}</h2>
+        <button class="btn btn-ghost btn-sm" @click="showAfterSales=false">{{ t.close }}</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:10px">{{ t.refundHint }}</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+          <div v-for="item in currentOrder?.items" :key="item.sku" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#fafafa;border-radius:6px">
+            <span style="font-size:13px;flex:1">{{ item.name }} × {{ item.qty }}</span>
+            <span style="font-size:12px;color:var(--gray-500)">¥{{ item.price }}</span>
+            <input v-model.number="refundQtyMap[item.sku]" type="number" min="0" :max="item.qty" style="width:50px;padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:12px;text-align:center" :placeholder="t.refundQty">
+          </div>
+        </div>
+        <div style="margin-bottom:12px;padding:8px 10px;background:#f0f9ff;border-radius:6px;font-size:13px;display:flex;align-items:center;gap:6px">
+          <span style="color:var(--gray-500)">{{ t.refundStrategy }}：</span>
+          <span style="font-weight:600;color:var(--primary)">{{ refundStrategyLabel }}</span>
+        </div>
+        <button class="btn btn-primary btn-sm btn-block" @click="calculateRefund" :disabled="refundLoading">
+          {{ refundLoading?t.calculating:t.calcRefund }}
+        </button>
+
+        <div v-if="refundResult" style="margin-top:14px;padding:12px;background:#f0f9ff;border:1px solid var(--primary-light);border-radius:8px">
+          <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">{{ t.refundResultTitle }}</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:13px">{{ t.refundAmount }}</span>
+            <span style="font-size:15px;font-weight:700;color:var(--primary)">¥{{ refundResult.refund_amount }}</span>
+          </div>
+          <div v-if="refundResult.capped" style="font-size:12px;color:var(--warning);margin-bottom:6px">⚠️ {{ refundResult.cap_reason }}</div>
+          <div style="font-size:12px;color:var(--gray-500);margin-bottom:6px">{{ t.remainingPayable }}: ¥{{ refundResult.remaining_payable }}</div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div v-for="ri in refundResult.refund_items" :key="ri.sku" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--gray-200);font-size:12px">
+              <span>{{ ri.sku }} × {{ ri.quantity }}</span>
+              <span>原价 ¥{{ ri.original_price }} - 分摊 ¥{{ ri.allocated_discount }} = <b>退款 ¥{{ ri.refund_amount }}</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 结算弹窗 -->
@@ -582,7 +676,7 @@ const I18N = {
     scope: '作用范围',
     priority: '优先级',
     delete: '删除',
-    settings: '计算参数',
+    settings: '计算上下文',
     calculationOrder: '计算顺序',
     shippingFee: '运费',
     userGroup: '用户组',
@@ -622,23 +716,52 @@ const I18N = {
     compareSaaS: 'SaaS 平台',
     compareRules: '规则管理',
     compareRulesOpen: '内存定义，手动创建',
-    compareRulesSaaS: '后台配置，55个模板',
+    compareRulesSaaS: '可视化后台，55+业务模板',
     compareCalc: '计算方式',
     compareCalcOpen: '直接传 rules 定义',
-    compareCalcSaaS: 'promotion_codes 查库 / 智能计算',
+    compareCalcSaaS: '编码查库，智能叠加计算',
     compareTenant: '多租户',
     compareTenantOpen: '无',
-    compareTenantSaaS: '完整隔离 + 配额控制',
+    compareTenantSaaS: '租户隔离，权限分级',
     compareRefund: '退款计算',
     compareRefundOpen: '无',
-    compareRefundSaaS: '凭证快照 + 逆向退款',
+    compareRefundSaaS: '计算凭证快照，逆向退款',
     compareMonitor: '运营监控',
     compareMonitorOpen: '无',
-    compareMonitorSaaS: '审计日志 + 统计看板',
+    compareMonitorSaaS: '审计日志，效果分析看板',
     compareCoupon: '消费券',
     compareCouponOpen: '无',
-    compareCouponSaaS: '模板 / 发放 / 核销',
+    compareCouponSaaS: '券模板，发放核销，数据追踪',
     compareLink: '了解更多',
+    engineLabel: '促销计算引擎',
+    mallLabel: '业务商城系统',
+    refundConfig: '售后策略配置',
+    compareUserGroup: '用户分群',
+    compareUserGroupOpen: '无',
+    compareUserGroupSaaS: '动态人群包，精准投放',
+    compareProductPool: '商品池管理',
+    compareProductPoolOpen: '无',
+    compareProductPoolSaaS: '动态商品池，黑白名单',
+    comparePriceProtect: '价格保护',
+    comparePriceProtectOpen: '无',
+    comparePriceProtectSaaS: '成本价保护，防击穿预警',
+    refundSimulate: '售后退款模拟',
+    refundHint: '选择要退款的商品和数量，系统按策略计算分摊明细',
+    refundQty: '退',
+    refundStrategy: '退款策略',
+    strategyProportional: '按比例分摊（默认）',
+    strategyKeepDiscount: '优惠不退还',
+    strategyFullRefund: '优惠全退',
+    calcRefund: '计算退款',
+    refundResultTitle: '退款明细',
+    refundAmount: '退款金额',
+    remainingPayable: '剩余应付',
+    refundedTotal: '已退累计',
+    refundEmpty: '请选择至少一个退款商品',
+    orderList: '订单列表',
+    emptyOrders: '暂无订单，结算后生成',
+    afterSales: '售后处理',
+    refunded: '已退款',
     codeRequired: '请输入规则编码', codePlaceholder: '规则编码（如 PROMO001）',
     confirmDelete: '确定删除该规则？',
   },
@@ -677,7 +800,7 @@ const I18N = {
     scope: 'Scope',
     priority: 'Priority',
     delete: 'Delete',
-    settings: 'Context',
+    settings: 'Calculation Context',
     calculationOrder: 'Order',
     shippingFee: 'Shipping',
     userGroup: 'User Group',
@@ -716,23 +839,52 @@ const I18N = {
     compareSaaS: 'SaaS Platform',
     compareRules: 'Rule Management',
     compareRulesOpen: 'In-memory, manual',
-    compareRulesSaaS: 'Admin + 55 templates',
+    compareRulesSaaS: 'Visual admin, 55+ templates',
     compareCalc: 'Calculation',
     compareCalcOpen: 'Pass full rules',
-    compareCalcSaaS: 'promotion_codes / smart',
+    compareCalcSaaS: 'Code lookup, smart stacking',
     compareTenant: 'Multi-tenant',
     compareTenantOpen: 'None',
-    compareTenantSaaS: 'Full isolation',
+    compareTenantSaaS: 'Tenant isolation, RBAC',
     compareRefund: 'Refund',
     compareRefundOpen: 'None',
-    compareRefundSaaS: 'Snapshot + reverse',
+    compareRefundSaaS: 'Calc snapshot, reverse refund',
     compareMonitor: 'Monitoring',
     compareMonitorOpen: 'None',
-    compareMonitorSaaS: 'Audit + dashboard',
+    compareMonitorSaaS: 'Audit log, analytics dashboard',
     compareCoupon: 'Coupons',
     compareCouponOpen: 'None',
-    compareCouponSaaS: 'Template / issue / redeem',
+    compareCouponSaaS: 'Coupon template, issue, tracking',
     compareLink: 'Learn more',
+    engineLabel: 'Promotion Engine',
+    mallLabel: 'Business Mall',
+    refundConfig: 'After-sales Config',
+    compareUserGroup: 'User Segments',
+    compareUserGroupOpen: 'None',
+    compareUserGroupSaaS: 'Dynamic segments, targeting',
+    compareProductPool: 'Product Pool',
+    compareProductPoolOpen: 'None',
+    compareProductPoolSaaS: 'Dynamic pool, whitelist/blacklist',
+    comparePriceProtect: 'Price Protection',
+    comparePriceProtectOpen: 'None',
+    comparePriceProtectSaaS: 'Cost protection, anti-break',
+    refundSimulate: 'Refund Simulation',
+    refundHint: 'Select items and quantities to refund',
+    refundQty: 'Qty',
+    refundStrategy: 'Refund Strategy',
+    strategyProportional: 'Proportional (default)',
+    strategyKeepDiscount: 'Keep discount',
+    strategyFullRefund: 'Full refund discount',
+    calcRefund: 'Calculate Refund',
+    refundResultTitle: 'Refund Details',
+    refundAmount: 'Refund Amount',
+    remainingPayable: 'Remaining',
+    refundedTotal: 'Refunded Total',
+    refundEmpty: 'Please select at least one item to refund',
+    orderList: 'Orders',
+    emptyOrders: 'No orders yet. Checkout to create.',
+    afterSales: 'After-sales',
+    refunded: 'Refunded',
     codeRequired: 'Rule code is required', codePlaceholder: 'Code (e.g. PROMO001)',
     confirmDelete: 'Delete this rule?',
   }
@@ -781,6 +933,14 @@ createApp({
       ruleIdCounter: 0,
       toast: { show: false, message: '', type: 'info', timer: null },
       showCompare: false,
+      showAfterSales: false,
+      currentOrder: null,
+      orders: [],
+      orderCounter: 0,
+      refundQtyMap: {},
+      refundStrategy: 'proportional',
+      refundResult: null,
+      refundLoading: false,
     };
   },
   computed: {
@@ -861,6 +1021,14 @@ createApp({
         map[r.promotion_code] = this.ACTION_TYPES.find(a => a.value === r.strategy_type)?.label || r.promotion_code;
       });
       return map;
+    },
+    refundStrategyLabel() {
+      const map = {
+        proportional: this.t.strategyProportional,
+        keep_discount: this.t.strategyKeepDiscount,
+        full_refund_discount: this.t.strategyFullRefund,
+      };
+      return map[this.refundStrategy] || this.refundStrategy;
     },
   },
   mounted() {
@@ -1193,9 +1361,68 @@ createApp({
         this.checkoutLoading = false;
       }
     },
+    async calculateRefund() {
+      if (!this.currentOrder) return;
+      const refundItems = [];
+      this.currentOrder.items.forEach(item => {
+        const qty = Number(this.refundQtyMap[item.sku]) || 0;
+        if (qty > 0) refundItems.push({ sku: item.sku, quantity: qty });
+      });
+      if (refundItems.length === 0) { this.showToast(this.t.refundEmpty, 'info'); return; }
+      this.refundLoading = true;
+      try {
+        const payload = {
+          order_items: this.currentOrder.items.map(item => ({ sku: item.sku, price: String(item.price), quantity: item.qty })),
+          item_discounts: this.currentOrder.item_discounts || [],
+          refund_items: refundItems,
+          total_paid: String(this.currentOrder.payable),
+          refunded_total: '0',
+          strategy: this.refundStrategy,
+        };
+        const res = await fetch('/api/refund', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+        });
+        this.refundResult = await res.json();
+        // 标记订单已退款
+        if (this.currentOrder) this.currentOrder.status = 'refunded';
+      } catch (e) {
+        this.showToast('Refund failed: ' + e.message, 'error');
+      } finally {
+        this.refundLoading = false;
+      }
+    },
     confirmOrder() {
+      this.orderCounter++;
+      const now = new Date();
+      const dateStr = now.getFullYear().toString() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+      const orderId = 'ORD' + dateStr + String(this.orderCounter).padStart(3,'0');
+      this.orders.unshift({
+        id: orderId,
+        time: now.toLocaleString(this.lang==='zh'?'zh-CN':'en-US', {hour:'2-digit', minute:'2-digit'}),
+        items: this.cart.map(item => ({
+          sku: item.sku,
+          name: item[this.lang==='zh'?'name':'nameEn'],
+          price: item.price,
+          qty: item.qty,
+        })),
+        payable: this.checkoutResult.summary.payable_amount,
+        original_amount: this.checkoutResult.summary.original_amount,
+        total_discount: this.checkoutResult.summary.total_discount,
+        item_discounts: this.checkoutResult.item_discounts || [],
+        status: 'normal',
+      });
       this.showToast(this.lang === 'zh' ? '订单已提交！' : 'Order placed!', 'success');
       this.showCheckout = false;
+      this.cart = [];
+    },
+    openAfterSales(order) {
+      if (order.status === 'refunded') { this.showToast(this.lang==='zh'?'该订单已退款':'Order already refunded', 'info'); return; }
+      this.currentOrder = order;
+      this.refundQtyMap = {};
+      order.items.forEach(item => { this.refundQtyMap[item.sku] = 0; });
+      this.refundResult = null;
+      this.refundStrategy = 'proportional';
+      this.showAfterSales = true;
     },
     addRuleToMutexGroup() {
       const rid = this.mutexGroup.selectedRule;
