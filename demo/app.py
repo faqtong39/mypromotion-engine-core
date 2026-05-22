@@ -19,10 +19,12 @@ if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
 import json
+import threading
+from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -63,9 +65,40 @@ class RuleInput(BaseModel):
     stack_config: dict = {}
 
 
-# 模拟规则库（零数据库，纯内存），用于演示 promotion_codes 查询能力。
-# key 为 promotion_code（与 strategy_type 保持一致），value 为可直接构建 Rule 的字典。
-RULE_STORE: dict[str, dict] = {}
+# 模拟规则库（零数据库，纯内存），按 Session ID 隔离。
+# 结构: {session_id: {promotion_code: rule_dict}}
+RULE_STORE: dict[str, dict[str, dict]] = {}
+store_lock = threading.Lock()
+MAX_RULES_PER_SESSION = 5
+DATA_TTL_HOURS = 24
+
+
+def get_session_id(request: Request) -> str:
+    sid = request.headers.get('X-Session-ID', '').strip()
+    return sid or 'default'
+
+
+def cleanup_expired_data():
+    """清理超过 DATA_TTL_HOURS 的数据"""
+    cutoff = datetime.now() - timedelta(hours=DATA_TTL_HOURS)
+    with store_lock:
+        for sid in list(RULE_STORE.keys()):
+            for code in list(RULE_STORE[sid].keys()):
+                created_at = RULE_STORE[sid][code].get('_created_at')
+                if created_at and datetime.fromisoformat(created_at) < cutoff:
+                    del RULE_STORE[sid][code]
+            if not RULE_STORE[sid]:
+                del RULE_STORE[sid]
+
+
+def _schedule_cleanup():
+    """每小时执行一次清理"""
+    cleanup_expired_data()
+    threading.Timer(3600, _schedule_cleanup).start()
+
+
+# 启动定时清理
+_schedule_cleanup()
 
 
 class MutexGroupInput(BaseModel):
@@ -93,38 +126,50 @@ class CalculateRequest(BaseModel):
     calculation_order: str = "promotions-first"
     shipping_fee: str = "0"
     user_group: str = ""
+    user_points: str = "0"
     is_first_order: bool = False
     mutex_groups: list[MutexGroupInput] = []
     special_mutex_rules: list[SpecialMutexRuleInput] = []
 
 
 @app.get("/api/rules")
-def list_rules():
-    return list(RULE_STORE.values())
+def list_rules(request: Request):
+    sid = get_session_id(request)
+    with store_lock:
+        return list(RULE_STORE.get(sid, {}).values())
 
 
 @app.post("/api/rules")
-def save_rule(rule: RuleInput):
+def save_rule(request: Request, rule: RuleInput):
     code = (rule.promotion_code or rule.strategy_type).strip()
     if not code:
         return {"error": "promotion_code or strategy_type required"}, 400
-    RULE_STORE[code] = {
-        "promotion_code": code,
-        "strategy_type": rule.strategy_type,
-        "priority": rule.priority,
-        "conditions": rule.conditions,
-        "actions": rule.actions,
-        "scopes": rule.scopes,
-        "stack_config": rule.stack_config or {},
-    }
+    sid = get_session_id(request)
+    with store_lock:
+        session_rules = RULE_STORE.setdefault(sid, {})
+        if code not in session_rules and len(session_rules) >= MAX_RULES_PER_SESSION:
+            return {"error": f"每个用户最多保存 {MAX_RULES_PER_SESSION} 条规则"}, 400
+        session_rules[code] = {
+            "promotion_code": code,
+            "strategy_type": rule.strategy_type,
+            "priority": rule.priority,
+            "conditions": rule.conditions,
+            "actions": rule.actions,
+            "scopes": rule.scopes,
+            "stack_config": rule.stack_config or {},
+            "_created_at": datetime.now().isoformat(),
+        }
     return {"code": code, "message": "saved"}
 
 
 @app.delete("/api/rules/{code}")
-def delete_rule(code: str):
-    if code in RULE_STORE:
-        del RULE_STORE[code]
-        return {"message": "deleted"}
+def delete_rule(request: Request, code: str):
+    sid = get_session_id(request)
+    with store_lock:
+        session_rules = RULE_STORE.get(sid, {})
+        if code in session_rules:
+            del session_rules[code]
+            return {"message": "deleted"}
     return {"error": "not found"}, 404
 
 
@@ -141,7 +186,7 @@ def _to_decimal(value) -> Decimal:
 
 
 @app.post("/api/calculate")
-def calculate(req: CalculateRequest):
+def calculate(request: Request, req: CalculateRequest):
     cart = Cart()
     for item in req.cart_items:
         cart.add_item(CartItem(
@@ -193,22 +238,25 @@ def calculate(req: CalculateRequest):
     # promotion_codes 处理：若 rules 为空则从模拟规则库加载；若已有 rules 则按 codes 过滤
     if req.promotion_codes:
         if not req.rules:
-            for code in req.promotion_codes:
-                tpl = RULE_STORE.get(code)
-                if not tpl:
-                    continue
-                conditions = [RuleCondition(condition_type=c.get("condition_type", ""), config=dict(c.get("config", {}))) for c in tpl["conditions"]]
-                actions = [RuleAction(action_type=a.get("action_type", ""), config=dict(a.get("config", {}))) for a in tpl["actions"]]
-                scopes = [RuleScope(scope_type=s.get("scope_type", ""), config=dict(s.get("config", {}))) for s in tpl["scopes"]]
-                rules.append(Rule(
-                    promotion_code=tpl["promotion_code"],
-                    strategy_type=tpl["strategy_type"],
-                    priority=tpl["priority"],
-                    conditions=conditions,
-                    actions=actions,
-                    scopes=scopes,
-                    stack_config=tpl.get("stack_config", {}),
-                ))
+            sid = get_session_id(request)
+            with store_lock:
+                session_rules = RULE_STORE.get(sid, {})
+                for code in req.promotion_codes:
+                    tpl = session_rules.get(code)
+                    if not tpl:
+                        continue
+                    conditions = [RuleCondition(condition_type=c.get("condition_type", ""), config=dict(c.get("config", {}))) for c in tpl["conditions"]]
+                    actions = [RuleAction(action_type=a.get("action_type", ""), config=dict(a.get("config", {}))) for a in tpl["actions"]]
+                    scopes = [RuleScope(scope_type=s.get("scope_type", ""), config=dict(s.get("config", {}))) for s in tpl["scopes"]]
+                    rules.append(Rule(
+                        promotion_code=tpl["promotion_code"],
+                        strategy_type=tpl["strategy_type"],
+                        priority=tpl["priority"],
+                        conditions=conditions,
+                        actions=actions,
+                        scopes=scopes,
+                        stack_config=tpl.get("stack_config", {}),
+                    ))
         else:
             codes = set(req.promotion_codes)
             rules = [r for r in rules if r.promotion_code in codes]
@@ -237,6 +285,7 @@ def calculate(req: CalculateRequest):
         calculation_order=calculation_order,
         used_coupons=used_coupons,
         is_first_order=req.is_first_order,
+        extra={"points": str(_to_decimal(req.user_points))},
     )
 
     from promotion_engine.types import MutexGroup, SpecialMutexRule
@@ -324,9 +373,10 @@ def refund(req: RefundRequest):
     # 如果前端没传 item_discounts，根据策略重新计算
     item_discounts = req.item_discounts
     if not item_discounts and req.order_items:
+        total_original = sum(Decimal(str(i.get("price", "0"))) * i.get("quantity", 1) for i in req.order_items)
         item_discounts = calculate_item_discounts(
             req.order_items,
-            sum(Decimal(str(i.get("original_price", "0"))) for i in req.order_items) - total_paid,
+            total_original - total_paid,
             strategy=req.strategy,
         )
     result = calculate_refund(

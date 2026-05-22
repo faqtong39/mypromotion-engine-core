@@ -332,7 +332,7 @@ class PromotionEngine:
                 new_payable = context.current_payable_amount - group_discount
                 context.update_payable_amount(new_payable)
 
-        total_discount = sum(r.discount for r in applied_results)
+        total_discount = sum((r.discount for r in applied_results), Decimal("0"))
 
         if coupons_first:
             promotion_payable = original_amount - coupon_discount

@@ -89,11 +89,25 @@
     background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow);
     padding: 14px; text-align: center; transition: transform 0.15s, box-shadow 0.15s;
     cursor: pointer; border: 2px solid transparent;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    position: relative;
+  }
+  .product-card:hover::after {
+    content: attr(data-tip);
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    background: var(--gray-800); color: #fff; font-size: 11px; padding: 6px 10px;
+    border-radius: 6px; white-space: nowrap; z-index: 10; pointer-events: none;
+    margin-bottom: 6px; line-height: 1.4;
+  }
+  .product-card:hover::before {
+    content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: var(--gray-800);
+    z-index: 10; pointer-events: none; margin-bottom: -4px;
   }
   .product-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--primary-light); }
-  .product-image { font-size: 48px; margin-bottom: 8px; }
-  .product-name { font-size: 13px; font-weight: 500; color: var(--gray-800); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .product-price { font-size: 16px; font-weight: 700; color: var(--danger); margin-bottom: 10px; }
+  .product-image { font-size: 48px; margin-bottom: 8px; line-height: 1; }
+  .product-name { font-size: 13px; font-weight: 500; color: var(--gray-800); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+  .product-price { font-size: 16px; font-weight: 700; color: var(--danger); margin-bottom: 10px; margin-top: auto; }
   .product-card .btn { width: 100%; }
 
   /* 互斥组标签 */
@@ -248,12 +262,13 @@
           <template v-if="ruleTab==='list'">
             <div style="display:flex;flex-direction:column;gap:6px">
               <div v-for="r in ruleStore" :key="r.promotion_code" style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--gray-200);border-radius:6px;background:#fafafa">
-                <code style="font-size:12px;background:#f3f4f6;padding:2px 6px;border-radius:4px;flex:none;cursor:pointer;color:var(--primary);text-decoration:underline" @click="fillRuleToForm(r)" title="点击复制到新建规则">{{ r.promotion_code }}</code>
+                <span style="font-size:12px;background:#f0f9ff;padding:2px 8px;border-radius:4px;flex:none;cursor:pointer;color:var(--primary);border:1px solid #bae6fd;font-weight:500" @click="fillRuleToForm(r)" title="点击复制到新建规则">{{ r.promotion_code }}</span>
                 <span style="font-size:13px;flex:1">{{ codeLabel(r) }}</span>
                 <span style="font-size:12px;color:var(--gray-500);flex:none">P{{ r.priority }}</span>
                 <span style="cursor:pointer;color:var(--gray-400);font-size:18px;line-height:1;padding:0 4px" @click.stop="deleteRuleFromStore(r.promotion_code)" title="删除">×</span>
               </div>
               <div v-if="ruleStore.length===0" class="empty-state">{{ t.emptyStore }}</div>
+              <div v-else style="font-size:12px;color:var(--gray-500);text-align:right">{{ ruleStore.length }}/5 {{ t.rulesLimit }}</div>
             </div>
           </template>
 
@@ -271,10 +286,20 @@
                 <input v-show="condHasParam(newRule.condType)" v-model="newRule.condParam" :placeholder="condPlaceholder(newRule.condType)" style="flex:1">
               </div>
               <div class="form-row" style="margin-bottom:6px">
-                <select v-model="newRule.actType" style="flex:1">
+                <select v-model="newRule.actType" style="flex:1" @change="onActionChange(newRule)">
                   <option v-for="a in ACTION_TYPES" :key="a.value" :value="a.value">{{ a.label }}</option>
                 </select>
                 <input v-show="actHasInput(newRule.actType)" v-model="newRule.actParam" :placeholder="actPlaceholder(newRule.actType)" style="flex:1">
+              </div>
+              <div v-show="isTiered(newRule.actType)" class="tiered-form" style="margin-bottom:10px">
+                <div class="tiered-row" v-for="(row, idx) in newRule.tieredRows" :key="idx" style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                  <span style="font-size:12px;color:var(--gray-500);white-space:nowrap">{{ tieredLabelA(newRule.actType) }}</span>
+                  <input v-model="row.a" type="number" style="flex:1">
+                  <span style="font-size:12px;color:var(--gray-500);white-space:nowrap">{{ tieredLabelB(newRule.actType) }}</span>
+                  <input v-model="row.b" type="number" style="flex:1">
+                  <button class="btn btn-ghost btn-sm" style="padding:2px 8px" @click="removeTieredRow(newRule, idx)">✕</button>
+                </div>
+                <button class="btn btn-ghost btn-sm" style="margin-top:4px;margin-bottom:6px" @click="addTieredRow(newRule)">+ 添加阶梯</button>
               </div>
               <div class="form-row" style="margin-bottom:0">
                 <select v-model="newRule.scopeType" style="flex:1">
@@ -356,7 +381,7 @@
       <div>
         <h2 class="section-title">{{ t.products }}</h2>
         <div class="product-grid">
-          <div class="product-card" v-for="p in products" :key="p.id" @click="addToCart(p)">
+          <div class="product-card" v-for="p in products" :key="p.id" @click="addToCart(p)" :data-tip="p.id + ' · ' + p.category + (p.tags?.length ? ' · ' + p.tags.join(',') : '')">
             <div class="product-image">{{ p.image }}</div>
             <div class="product-name">{{ p[lang==='zh'?'name':'nameEn'] }}</div>
             <div class="product-price">¥{{ p.price }}</div>
@@ -375,7 +400,7 @@
         <div v-else>
           <div class="cart-item" v-for="(item, idx) in cart" :key="item.sku">
             <div class="cart-item-info">
-              <div class="cart-item-name">{{ item[lang==='zh'?'name':'nameEn'] }}</div>
+              <div class="cart-item-name">{{ item[lang==='zh'?'name':'nameEn'] }} <span style="font-size:11px;color:var(--gray-400)">({{ item.sku }})</span></div>
               <div class="cart-item-price">¥{{ item.price }} / {{ t.each }}</div>
             </div>
             <div class="cart-item-qty">
@@ -438,13 +463,15 @@
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:auto">
                 <input type="checkbox" v-model="settings.isFirstOrder" style="width:auto;flex:none;height:auto;outline:none"> {{ t.isFirstOrder }}
               </label>
+              <label style="min-width:auto">{{ t.userPoints }}</label>
+              <input v-model="settings.userPoints" placeholder="0" style="width:80px;flex:none">
             </div>
             <!-- 生效规则 -->
             <div style="padding-top:10px;border-top:1px dashed var(--gray-200);margin-top:10px">
               <label style="min-width:auto;font-weight:600;display:block;margin-bottom:6px;font-size:12px">{{ t.activeRules }}</label>
               <div v-if="ruleStore.length===0" class="empty-state" style="padding:8px;font-size:12px">{{ t.emptyStore }}</div>
               <div v-else style="display:flex;flex-wrap:wrap;gap:6px">
-                <label v-for="c in ruleStore" :key="c.promotion_code" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 6px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;background:#fff" :style="promotionCodes.includes(c.promotion_code)?'border-color:var(--primary);background:#f0f9ff':''">
+                <label v-for="c in ruleStore" :key="c.promotion_code" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 6px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;background:#fff" :style="promotionCodes.includes(c.promotion_code)?'border-color:var(--primary)':''">
                   <input type="checkbox" :value="c.promotion_code" v-model="promotionCodes" style="width:auto;flex:none">
                   <code style="font-size:11px">{{ c.promotion_code }}</code>
                 </label>
@@ -502,34 +529,45 @@
       </div>
       <div class="modal-body">
         <div style="font-size:12px;color:var(--gray-500);margin-bottom:10px">{{ t.refundHint }}</div>
+        <div v-if="currentOrder?.status === 'refunded'" style="margin-bottom:10px;padding:6px 10px;background:#fef3c7;border-radius:6px;font-size:12px;color:#92400e">{{ t.viewRefundDetail }}</div>
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
           <div v-for="item in currentOrder?.items" :key="item.sku" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#fafafa;border-radius:6px">
-            <span style="font-size:13px;flex:1">{{ item.name }} × {{ item.qty }}</span>
+            <span style="font-size:13px;flex:1">{{ item.name }} <span style="color:var(--gray-400)">(共{{ item.qty }}，已退{{ currentOrder?.refundedQtyMap?.[item.sku] || 0 }})</span></span>
             <span style="font-size:12px;color:var(--gray-500)">¥{{ item.price }}</span>
-            <input v-model.number="refundQtyMap[item.sku]" type="number" min="0" :max="item.qty" style="width:50px;padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:12px;text-align:center" :placeholder="t.refundQty">
+            <input v-model.number="refundQtyMap[item.sku]" type="number" min="0" :max="item.qty - (currentOrder?.refundedQtyMap?.[item.sku] || 0)" style="width:50px;padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:12px;text-align:center" :placeholder="t.refundQty" :disabled="currentOrder?.status === 'refunded'">
           </div>
         </div>
         <div style="margin-bottom:12px;padding:8px 10px;background:#f0f9ff;border-radius:6px;font-size:13px;display:flex;align-items:center;gap:6px">
           <span style="color:var(--gray-500)">{{ t.refundStrategy }}：</span>
           <span style="font-weight:600;color:var(--primary)">{{ refundStrategyLabel }}</span>
         </div>
-        <button class="btn btn-primary btn-sm btn-block" @click="calculateRefund" :disabled="refundLoading">
+        <button v-if="currentOrder?.status !== 'refunded'" class="btn btn-primary btn-sm btn-block" @click="calculateRefund" :disabled="refundLoading">
           {{ refundLoading?t.calculating:t.calcRefund }}
         </button>
 
-        <div v-if="refundResult" style="margin-top:14px;padding:12px;background:#f0f9ff;border:1px solid var(--primary-light);border-radius:8px">
-          <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">{{ t.refundResultTitle }}</div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:13px">{{ t.refundAmount }}</span>
-            <span style="font-size:15px;font-weight:700;color:var(--primary)">¥{{ refundResult.refund_amount }}</span>
+        <div v-if="currentOrder?.refundHistory?.length || refundResult" style="margin-top:14px;padding:12px;background:#f0f9ff;border:1px solid var(--primary-light);border-radius:8px">
+          <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">
+            {{ t.refundResultTitle }}
+            <span v-if="currentOrder?.refundHistory?.length" style="font-size:12px;font-weight:400;color:var(--gray-500)">（共 {{ currentOrder.refundHistory.length }} 笔）</span>
           </div>
-          <div v-if="refundResult.capped" style="font-size:12px;color:var(--warning);margin-bottom:6px">⚠️ {{ refundResult.cap_reason }}</div>
-          <div style="font-size:12px;color:var(--gray-500);margin-bottom:6px">{{ t.remainingPayable }}: ¥{{ refundResult.remaining_payable }}</div>
-          <div style="display:flex;flex-direction:column;gap:4px">
-            <div v-for="ri in refundResult.refund_items" :key="ri.sku" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--gray-200);font-size:12px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div v-for="(record, idx) in (currentOrder?.refundHistory || [])" :key="idx" style="padding-bottom:8px;border-bottom:1px dashed var(--gray-200);">
+              <div style="font-size:12px;color:var(--gray-500);margin-bottom:4px">第 {{ idx + 1 }} 笔 · 退款 ¥{{ record.refund_amount }}</div>
+              <div v-for="ri in record.refund_items" :key="ri.sku" style="display:flex;justify-content:space-between;font-size:12px">
+                <span>{{ ri.sku }} × {{ ri.quantity }}</span>
+                <span>原价 ¥{{ ri.original_price }} - 分摊 ¥{{ ri.allocated_discount }} = <b>退款 ¥{{ ri.refund_amount }}</b></span>
+              </div>
+              <div v-if="record.capped" style="font-size:12px;color:var(--warning);margin-top:4px">⚠️ {{ record.cap_reason }}</div>
+            </div>
+          </div>
+          <div v-if="refundResult" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--gray-200);">
+            <div style="font-size:12px;color:var(--primary);margin-bottom:4px">本次 · 退款 ¥{{ refundResult.refund_amount }}</div>
+            <div v-for="ri in refundResult.refund_items" :key="ri.sku" style="display:flex;justify-content:space-between;font-size:12px">
               <span>{{ ri.sku }} × {{ ri.quantity }}</span>
               <span>原价 ¥{{ ri.original_price }} - 分摊 ¥{{ ri.allocated_discount }} = <b>退款 ¥{{ ri.refund_amount }}</b></span>
             </div>
+            <div v-if="refundResult.capped" style="font-size:12px;color:var(--warning);margin-top:4px">⚠️ {{ refundResult.cap_reason }}</div>
+            <div style="font-size:12px;color:var(--gray-500);margin-top:4px">{{ t.remainingPayable }}: ¥{{ refundResult.remaining_payable }}</div>
           </div>
         </div>
       </div>
@@ -561,26 +599,28 @@
           </div>
 
           <!-- 优惠明细 -->
-          <div class="order-section" v-if="checkoutResult.applied_promotions.length || checkoutResult.used_coupons.length">
-            <div class="order-section-title">{{ t.discountDetails }}</div>
-            <div class="applied-list">
-              <div class="applied-item" v-for="p in checkoutResult.applied_promotions" :key="p.promotion_code">
-                <div>
-                  <div style="font-weight:600">{{ checkoutRuleLabelMap[p.promotion_code] || p.promotion_code }}</div>
-                  <div class="applied-meta">{{ p.strategy_type }} <span v-if="p.discount !== '0'">| {{ t.save }} ¥{{ p.discount }}</span><span v-if="p.free_shipping">| {{ t.freeShippingApplied }}</span></div>
+          <div class="order-section" v-if="checkoutResult.applied_promotions.length || checkoutResult.used_coupons.length || Number(checkoutResult.summary.shipping_fee || 0) != 0">
+            <div v-if="checkoutResult.applied_promotions.length || checkoutResult.used_coupons.length">
+              <div class="order-section-title">{{ t.discountDetails }}</div>
+              <div class="applied-list">
+                <div class="applied-item" v-for="p in checkoutResult.applied_promotions" :key="p.promotion_code">
+                  <div>
+                    <div style="font-weight:600">{{ checkoutRuleLabelMap[p.promotion_code] || p.promotion_code }}</div>
+                    <div class="applied-meta">{{ p.strategy_type }} <span v-if="p.discount !== '0'">| {{ t.save }} ¥{{ p.discount }}</span><span v-if="p.free_shipping">| {{ t.freeShippingApplied }}</span></div>
+                  </div>
+                  <span class="badge badge-green">{{ t.applied }}</span>
                 </div>
-                <span class="badge badge-green">{{ t.applied }}</span>
-              </div>
-              <div class="applied-item coupon-item" v-for="c in checkoutResult.used_coupons" :key="c.code">
-                <div>
-                  <div style="font-weight:600">{{ c.code }}</div>
-                  <div class="applied-meta">{{ c.coupon_type }} | {{ t.save }} ¥{{ c.discount }}</div>
+                <div class="applied-item coupon-item" v-for="c in checkoutResult.used_coupons" :key="c.code">
+                  <div>
+                    <div style="font-weight:600">{{ c.code }}</div>
+                    <div class="applied-meta">{{ c.coupon_type }} | {{ t.save }} ¥{{ c.discount }}</div>
+                  </div>
+                  <span class="badge badge-amber">{{ t.used }}</span>
                 </div>
-                <span class="badge badge-amber">{{ t.used }}</span>
               </div>
+              <div class="order-divider"></div>
             </div>
-            <div class="order-divider"></div>
-            <div class="order-discount">
+            <div class="order-discount" v-if="Number(checkoutResult.summary.total_discount || 0) != 0">
               <span class="label">{{ t.promotionDiscount }}</span>
               <span class="amount">-¥{{ checkoutResult.summary.total_discount }}</span>
             </div>
@@ -588,8 +628,8 @@
               <span class="label">{{ t.couponDiscount }}</span>
               <span class="amount">-¥{{ checkoutResult.summary.coupon_discount }}</span>
             </div>
-            <div class="order-divider"></div>
-            <div class="order-discount" v-if="checkoutResult.summary.shipping_fee !== '0'">
+            <div class="order-divider" v-if="(Number(checkoutResult.summary.total_discount || 0) != 0 || checkoutResult.summary.coupon_discount !== '0') && Number(checkoutResult.summary.shipping_fee || 0) != 0"></div>
+            <div class="order-discount" v-if="Number(checkoutResult.summary.shipping_fee || 0) != 0">
               <span class="label">{{ t.shippingFee }}</span>
               <span class="amount">+¥{{ checkoutResult.summary.shipping_fee }}</span>
             </div>
@@ -681,6 +721,7 @@ const I18N = {
     shippingFee: '运费',
     userGroup: '用户组',
     isFirstOrder: '首单用户',
+    userPoints: '用户积分',
     promotionsFirst: '促销先，券后',
     couponsFirst: '券先，促销后',
     optimal: '自动最优',
@@ -707,6 +748,7 @@ const I18N = {
     codesHint: '从规则库中勾选要应用的促销编码',
     emptyCodes: '尚未选择任何促销编码',
     emptyStore: '规则库为空，请在下方创建',
+    rulesLimit: '条规则',
     activeRules: '生效规则',
     tabList: '规则列表', tabCreate: '新建规则',
     createRule: '新建规则', saveRule: '保存到规则库', saveOk: '保存成功',
@@ -715,22 +757,22 @@ const I18N = {
     compareOpen: '开源引擎',
     compareSaaS: 'SaaS 平台',
     compareRules: '规则管理',
-    compareRulesOpen: '内存定义，手动创建',
+    compareRulesOpen: '内存规则库，可视化创建',
     compareRulesSaaS: '可视化后台，55+业务模板',
     compareCalc: '计算方式',
-    compareCalcOpen: '直接传 rules 定义',
+    compareCalcOpen: '编码查库，支持顺序/互斥/替换',
     compareCalcSaaS: '编码查库，智能叠加计算',
     compareTenant: '多租户',
     compareTenantOpen: '无',
     compareTenantSaaS: '租户隔离，权限分级',
     compareRefund: '退款计算',
-    compareRefundOpen: '无',
+    compareRefundOpen: '3种分摊策略，部分退款，金额保护',
     compareRefundSaaS: '计算凭证快照，逆向退款',
     compareMonitor: '运营监控',
     compareMonitorOpen: '无',
     compareMonitorSaaS: '审计日志，效果分析看板',
     compareCoupon: '消费券',
-    compareCouponOpen: '无',
+    compareCouponOpen: '满减/折扣券，前端抵扣',
     compareCouponSaaS: '券模板，发放核销，数据追踪',
     compareLink: '了解更多',
     engineLabel: '促销计算引擎',
@@ -757,6 +799,7 @@ const I18N = {
     refundAmount: '退款金额',
     remainingPayable: '剩余应付',
     refundedTotal: '已退累计',
+    viewRefundDetail: '该订单已退款，以下为历史退款明细',
     refundEmpty: '请选择至少一个退款商品',
     orderList: '订单列表',
     emptyOrders: '暂无订单，结算后生成',
@@ -804,6 +847,8 @@ const I18N = {
     calculationOrder: 'Order',
     shippingFee: 'Shipping',
     userGroup: 'User Group',
+    isFirstOrder: 'First Order',
+    userPoints: 'User Points',
     promotionsFirst: 'Promotions First',
     couponsFirst: 'Coupons First',
     optimal: 'Auto Optimal',
@@ -830,6 +875,7 @@ const I18N = {
     codesHint: 'Select promotion codes from the rule store to apply',
     emptyCodes: 'No promotion codes selected',
     emptyStore: 'Rule store is empty. Create one below.',
+    rulesLimit: 'rules',
     activeRules: 'Active Rules',
     tabList: 'Rule List', tabCreate: 'New Rule',
     createRule: 'New Rule', saveRule: 'Save to Store', saveOk: 'Saved',
@@ -838,22 +884,22 @@ const I18N = {
     compareOpen: 'Open Source',
     compareSaaS: 'SaaS Platform',
     compareRules: 'Rule Management',
-    compareRulesOpen: 'In-memory, manual',
+    compareRulesOpen: 'In-memory rules, visual builder',
     compareRulesSaaS: 'Visual admin, 55+ templates',
     compareCalc: 'Calculation',
-    compareCalcOpen: 'Pass full rules',
+    compareCalcOpen: 'Code lookup, order/mutex/replace support',
     compareCalcSaaS: 'Code lookup, smart stacking',
     compareTenant: 'Multi-tenant',
     compareTenantOpen: 'None',
     compareTenantSaaS: 'Tenant isolation, RBAC',
     compareRefund: 'Refund',
-    compareRefundOpen: 'None',
+    compareRefundOpen: '3 strategies, partial refund, cap protection',
     compareRefundSaaS: 'Calc snapshot, reverse refund',
     compareMonitor: 'Monitoring',
     compareMonitorOpen: 'None',
     compareMonitorSaaS: 'Audit log, analytics dashboard',
     compareCoupon: 'Coupons',
-    compareCouponOpen: 'None',
+    compareCouponOpen: 'Full-reduction / percentage coupon, frontend deduction',
     compareCouponSaaS: 'Coupon template, issue, tracking',
     compareLink: 'Learn more',
     engineLabel: 'Promotion Engine',
@@ -880,6 +926,7 @@ const I18N = {
     refundAmount: 'Refund Amount',
     remainingPayable: 'Remaining',
     refundedTotal: 'Refunded Total',
+    viewRefundDetail: 'Order already refunded. Refund details below.',
     refundEmpty: 'Please select at least one item to refund',
     orderList: 'Orders',
     emptyOrders: 'No orders yet. Checkout to create.',
@@ -895,18 +942,18 @@ createApp({
     return {
       lang: 'zh',
       products: [
-        {id:'P001', name:'无线耳机', nameEn:'Wireless Earbuds', price:199, image:'🎧', category:'electronics'},
-        {id:'P002', name:'智能手表', nameEn:'Smart Watch', price:899, image:'⌚', category:'electronics'},
-        {id:'P003', name:'运动鞋', nameEn:'Running Shoes', price:399, image:'👟', category:'sport'},
-        {id:'P004', name:'双肩包', nameEn:'Backpack', price:299, image:'🎒', category:'bags'},
-        {id:'P005', name:'咖啡机', nameEn:'Coffee Maker', price:1299, image:'☕', category:'home'},
-        {id:'P006', name:'机械键盘', nameEn:'Mech Keyboard', price:599, image:'⌨️', category:'electronics'},
-        {id:'P007', name:'蓝牙音箱', nameEn:'BT Speaker', price:349, image:'🔊', category:'electronics'},
-        {id:'P008', name:'瑜伽垫', nameEn:'Yoga Mat', price:89, image:'🧘', category:'sport'},
-        {id:'P009', name:'空气炸锅', nameEn:'Air Fryer', price:459, image:'🍟', category:'home'},
-        {id:'P010', name:'护眼台灯', nameEn:'Desk Lamp', price:189, image:'💡', category:'home'},
-        {id:'P011', name:'运动水壶', nameEn:'Water Bottle', price:59, image:'🍼', category:'sport'},
-        {id:'P012', name:'护手霜', nameEn:'Hand Cream', price:49, image:'🧴', category:'beauty'},
+        {id:'P001', name:'无线耳机', nameEn:'Wireless Earbuds', price:199, image:'🎧', category:'electronics', tags:['hot','new']},
+        {id:'P002', name:'智能手表', nameEn:'Smart Watch', price:899, image:'⌚', category:'electronics', tags:['hot']},
+        {id:'P003', name:'运动鞋', nameEn:'Running Shoes', price:399, image:'👟', category:'sport', tags:['hot']},
+        {id:'P004', name:'双肩包', nameEn:'Backpack', price:299, image:'🎒', category:'bags', tags:['new']},
+        {id:'P005', name:'咖啡机', nameEn:'Coffee Maker', price:1299, image:'☕', category:'home', tags:['new']},
+        {id:'P006', name:'机械键盘', nameEn:'Mech Keyboard', price:599, image:'⌨️', category:'electronics', tags:['hot']},
+        {id:'P007', name:'蓝牙音箱', nameEn:'BT Speaker', price:349, image:'🔊', category:'electronics', tags:['hot']},
+        {id:'P008', name:'瑜伽垫', nameEn:'Yoga Mat', price:89, image:'🧘', category:'sport', tags:['hot']},
+        {id:'P009', name:'空气炸锅', nameEn:'Air Fryer', price:459, image:'🍟', category:'home', tags:['new']},
+        {id:'P010', name:'护眼台灯', nameEn:'Desk Lamp', price:189, image:'💡', category:'home', tags:['new']},
+        {id:'P011', name:'运动水壶', nameEn:'Water Bottle', price:59, image:'🍼', category:'sport', tags:['hot']},
+        {id:'P012', name:'护手霜', nameEn:'Hand Cream', price:49, image:'🧴', category:'beauty', tags:['hot','new']},
       ],
       cart: [],
       cartCoupons: [
@@ -922,8 +969,10 @@ createApp({
         condType: 'min_order_amount', condParam: '',
         actType: 'fixed_amount_reduction', actParam: '',
         scopeType: 'all_items', scopeParam: '',
+        tieredRows: [],
       },
-      settings: { calculationOrder:'promotions-first', shippingFee:'0', userGroup:'', isFirstOrder:false },
+      settings: { calculationOrder:'promotions-first', shippingFee:'0', userGroup:'', isFirstOrder:false, userPoints:'0' },
+      sessionId: '',
       mutexGroup: { selectedRule: '', ruleIds: [] },
       showCheckout: false,
       checkoutLoading: false,
@@ -1032,8 +1081,10 @@ createApp({
     },
   },
   mounted() {
+    this.sessionId = this.getOrCreateSessionId();
     this.loadPreset('default');
     this.loadRules();
+    this.loadOrders();
   },
   methods: {
     showToast(message, type='info') {
@@ -1072,6 +1123,14 @@ createApp({
       if (scope.scope_type === 'except_items' && scopeCfg.except_skus) {
         scopeParam = Array.isArray(scopeCfg.except_skus) ? scopeCfg.except_skus.join(',') : String(scopeCfg.except_skus);
       }
+      // 阶梯价数据回显
+      let tieredRows = [];
+      if (this.isTiered(act.action_type) && actCfg.tiers) {
+        tieredRows = actCfg.tiers.map(t => ({
+          a: t.quantity !== undefined ? t.quantity : (t.threshold !== undefined ? t.threshold : ''),
+          b: t.amount !== undefined ? t.amount : (t.price !== undefined ? t.price : ''),
+        }));
+      }
       this.newRule = {
         promotion_code: r.promotion_code + '_copy',
         strategy_type: r.strategy_type,
@@ -1080,8 +1139,9 @@ createApp({
         condParam: condParam,
         actType: act.action_type || 'fixed_amount_reduction',
         actParam: actParam,
-        scopeType: scope.scope_type || 'all_items',
+        scopeType: (scope.scope_type === 'all' ? 'all_items' : scope.scope_type) || 'all_items',
         scopeParam: scopeParam,
+        tieredRows: tieredRows,
       };
       this.ruleTab = 'create';
       this.showToast(this.lang === 'zh' ? '已填充到新建规则，请修改后保存' : 'Copied to new rule form. Edit and save.', 'info');
@@ -1193,12 +1253,12 @@ createApp({
       } else if (rule.condType && rule.condParam !== '') {
         if (rule.condType === 'user_group') {
           conditions.push({ condition_type: rule.condType, config: { group_ids: [String(rule.condParam)] } });
-        } else if (rule.condType === 'weekday') {
-          const days = String(rule.condParam).split(',').map(s => parseInt(s.trim())).filter(n => n >= 1 && n <= 7);
-          conditions.push({ condition_type: rule.condType, config: { days } });
         } else {
-          const val = isNaN(rule.condParam) ? rule.condParam : parseFloat(rule.condParam);
+          let val = isNaN(rule.condParam) ? rule.condParam : parseFloat(rule.condParam);
           const key = this.COND_TYPES.find(c => c.value === rule.condType)?.param || 'value';
+          if (key === 'days' && typeof val === 'string') {
+            val = val.split(',').map(s => parseInt(s.trim())).filter(Number.isFinite);
+          }
           conditions.push({ condition_type: rule.condType, config: { [key]: val } });
         }
       }
@@ -1242,7 +1302,7 @@ createApp({
     },
     async loadRules() {
       try {
-        const res = await fetch('/api/rules');
+        const res = await fetch('/api/rules', { headers: { 'X-Session-ID': this.sessionId } });
         this.ruleStore = await res.json();
       } catch (e) { console.error('loadRules failed', e); }
     },
@@ -1252,22 +1312,40 @@ createApp({
       const conditions = [];
       if (this.newRule.condType) {
         const config = {};
-        if (this.condHasParam(this.newRule.condType) && this.newRule.condParam !== '') {
+        if (this.newRule.condType === 'is_first_order') {
+          // 首单条件不需要参数
+        } else if (this.newRule.condType === 'user_group') {
+          if (this.newRule.condParam !== '') config.group_ids = [String(this.newRule.condParam)];
+        } else if (this.newRule.condType && this.newRule.condParam !== '') {
           const key = this.COND_TYPES.find(c => c.value === this.newRule.condType)?.param || 'value';
-          config[key] = isNaN(this.newRule.condParam) ? this.newRule.condParam : parseFloat(this.newRule.condParam);
-          if (key === 'days' && typeof config[key] === 'string') config[key] = config[key].split(',').map(s => parseInt(s.trim())).filter(Number.isFinite);
-          if (key === 'group') config[key] = [config[key]];
+          let val = isNaN(this.newRule.condParam) ? this.newRule.condParam : parseFloat(this.newRule.condParam);
+          if (key === 'days' && typeof val === 'string') val = val.split(',').map(s => parseInt(s.trim())).filter(Number.isFinite);
+          config[key] = val;
         }
         conditions.push({ condition_type: this.newRule.condType, config });
       }
       const actions = [];
       if (this.newRule.actType) {
         const config = {};
-        if (this.actHasInput(this.newRule.actType) && this.newRule.actParam !== '') {
+        if (this.isTiered(this.newRule.actType)) {
+          const tiers = [];
+          (this.newRule.tieredRows || []).forEach(row => {
+            if (row.a !== '' && row.b !== '') {
+              if (this.newRule.actType === 'tiered_price') tiers.push({ quantity: parseFloat(row.a), amount: parseFloat(row.b) });
+              else tiers.push({ threshold: parseFloat(row.a), amount: parseFloat(row.b) });
+            }
+          });
+          if (tiers.length > 0) {
+            config.tiers = tiers;
+            actions.push({ action_type: this.newRule.actType, config });
+          }
+        } else if (this.newRule.actType === 'free_shipping') {
+          actions.push({ action_type: this.newRule.actType, config: {} });
+        } else if (this.actHasInput(this.newRule.actType) && this.newRule.actParam !== '') {
           const key = this.ACTION_TYPES.find(a => a.value === this.newRule.actType)?.param || 'value';
           config[key] = isNaN(this.newRule.actParam) ? this.newRule.actParam : parseFloat(this.newRule.actParam);
+          actions.push({ action_type: this.newRule.actType, config });
         }
-        actions.push({ action_type: this.newRule.actType, config });
       }
       const scopes = [{ scope_type: this.newRule.scopeType, config: {} }];
       if (this.scopeHasParam(this.newRule.scopeType) && this.newRule.scopeParam !== '') {
@@ -1287,18 +1365,17 @@ createApp({
         stack_config: {},
       };
       try {
-        const res = await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const res = await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload) });
         const data = await res.json();
         if (data.error) { this.showToast(data.error, 'error'); return; }
         await this.loadRules();
-        this.newRule = { promotion_code: '', strategy_type: 'full_reduction', priority: 10, condType: 'min_order_amount', condParam: '', actType: 'fixed_amount_reduction', actParam: '', scopeType: 'all_items', scopeParam: '' };
         this.showToast(this.t.saveOk, 'success');
       } catch (e) { this.showToast('Save failed: ' + e.message, 'error'); }
     },
     async deleteRuleFromStore(code) {
       if (!confirm(this.t.confirmDelete)) return;
       try {
-        const res = await fetch('/api/rules/' + encodeURIComponent(code), { method: 'DELETE' });
+        const res = await fetch('/api/rules/' + encodeURIComponent(code), { method: 'DELETE', headers: { 'X-Session-ID': this.sessionId } });
         await res.json();
         this.promotionCodes = this.promotionCodes.filter(c => c !== code);
         this.mutexGroup.ruleIds = this.mutexGroup.ruleIds.filter(c => c !== code);
@@ -1342,6 +1419,7 @@ createApp({
           calculation_order: this.settings.calculationOrder,
           shipping_fee: String(this.settings.shippingFee),
           user_group: this.settings.userGroup,
+          user_points: String(this.settings.userPoints || '0'),
           is_first_order: this.settings.isFirstOrder,
           mutex_groups: this.mutexGroup.ruleIds.length ? [{
             code: 'default', name: 'default', strategies: [],
@@ -1351,7 +1429,7 @@ createApp({
         };
         this.apiRequest = JSON.stringify(payload, null, 2);
         const res = await fetch('/api/calculate', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload),
         });
         this.checkoutResult = await res.json();
         this.apiResponse = JSON.stringify(this.checkoutResult, null, 2);
@@ -1365,7 +1443,8 @@ createApp({
       if (!this.currentOrder) return;
       const refundItems = [];
       this.currentOrder.items.forEach(item => {
-        const qty = Number(this.refundQtyMap[item.sku]) || 0;
+        const maxQty = item.qty - (this.currentOrder.refundedQtyMap?.[item.sku] || 0);
+        const qty = Math.min(Number(this.refundQtyMap[item.sku]) || 0, maxQty);
         if (qty > 0) refundItems.push({ sku: item.sku, quantity: qty });
       });
       if (refundItems.length === 0) { this.showToast(this.t.refundEmpty, 'info'); return; }
@@ -1376,15 +1455,34 @@ createApp({
           item_discounts: this.currentOrder.item_discounts || [],
           refund_items: refundItems,
           total_paid: String(this.currentOrder.payable),
-          refunded_total: '0',
+          refunded_total: this.currentOrder.refunded_total || '0',
           strategy: this.refundStrategy,
         };
         const res = await fetch('/api/refund', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload),
         });
         this.refundResult = await res.json();
-        // 标记订单已退款
-        if (this.currentOrder) this.currentOrder.status = 'refunded';
+        // 更新订单退款状态与累计金额
+        if (this.currentOrder) {
+          this.currentOrder.refunded_total = this.refundResult.refunded_total;
+          this.currentOrder.refundData = this.refundResult;
+          // 累加各商品已退数量
+          if (!this.currentOrder.refundedQtyMap) this.currentOrder.refundedQtyMap = {};
+          this.refundResult.refund_items.forEach(ri => {
+            const prev = this.currentOrder.refundedQtyMap[ri.sku] || 0;
+            this.currentOrder.refundedQtyMap[ri.sku] = prev + ri.quantity;
+          });
+          // 保存到历史记录
+          if (!this.currentOrder.refundHistory) this.currentOrder.refundHistory = [];
+          this.currentOrder.refundHistory.push({...this.refundResult, _ts: Date.now()});
+          // 判断是否全部退完（以商品数量为准，不依赖 remaining_payable 的精度）
+          const allRefunded = this.currentOrder.items.every(item => {
+            const refunded = this.currentOrder.refundedQtyMap[item.sku] || 0;
+            return refunded >= item.qty;
+          });
+          this.currentOrder.status = allRefunded ? 'refunded' : 'partial_refunded';
+          this.saveOrders();
+        }
       } catch (e) {
         this.showToast('Refund failed: ' + e.message, 'error');
       } finally {
@@ -1410,18 +1508,48 @@ createApp({
         total_discount: this.checkoutResult.summary.total_discount,
         item_discounts: this.checkoutResult.item_discounts || [],
         status: 'normal',
+        refunded_total: '0.00',
+        refundedQtyMap: {},
+        refundHistory: [],
+        _createdAt: Date.now(),
       });
+      this.saveOrders();
       this.showToast(this.lang === 'zh' ? '订单已提交！' : 'Order placed!', 'success');
       this.showCheckout = false;
       this.cart = [];
     },
+    saveOrders() {
+      const key = 'promo_engine_orders_' + this.sessionId;
+      localStorage.setItem(key, JSON.stringify(this.orders));
+    },
+    loadOrders() {
+      const key = 'promo_engine_orders_' + this.sessionId;
+      const data = localStorage.getItem(key);
+      if (data) {
+        try {
+          const orders = JSON.parse(data);
+          const cutoff = Date.now() - 24 * 3600 * 1000;
+          this.orders = orders.filter(o => (o._createdAt || 0) > cutoff);
+          this.orderCounter = this.orders.length;
+        } catch (e) { console.error('loadOrders failed', e); }
+      }
+    },
     openAfterSales(order) {
-      if (order.status === 'refunded') { this.showToast(this.lang==='zh'?'该订单已退款':'Order already refunded', 'info'); return; }
       this.currentOrder = order;
       this.refundQtyMap = {};
-      order.items.forEach(item => { this.refundQtyMap[item.sku] = 0; });
+      order.items.forEach(item => {
+        const refunded = order.refundedQtyMap?.[item.sku] || 0;
+        this.refundQtyMap[item.sku] = 0;
+      });
+      // 如果历史记录存在但 refundData 只有最后一次，用历史记录补充
       this.refundResult = null;
-      this.refundStrategy = 'proportional';
+      // 校正状态：若已全部退完但状态未更新，强制修正
+      const allRefunded = order.items.every(item => {
+        const refunded = order.refundedQtyMap?.[item.sku] || 0;
+        return refunded >= item.qty;
+      });
+      if (allRefunded) order.status = 'refunded';
+      this.saveOrders();
       this.showAfterSales = true;
     },
     addRuleToMutexGroup() {
@@ -1437,7 +1565,7 @@ createApp({
     },
     async savePresetRule(payload) {
       try {
-        await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload) });
         await this.loadRules();
       } catch (e) { console.error('savePresetRule failed', e); }
     },
@@ -1450,41 +1578,40 @@ createApp({
       this.promotionCodes = []; this.mutexGroup = { selectedRule: '', ruleIds: [] };
       if (name === 'full_reduction') {
         this.products.forEach((p,i) => { if(i<2) this.addToCart(p); });
-        await this.savePresetRule({promotion_code:'preset_full_reduction', strategy_type:'full_reduction', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:300,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:50}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        await this.savePresetRule({promotion_code:'preset_full_reduction', strategy_type:'full_reduction', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:300,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:50}}], scopes:[{scope_type:'all_items',config:{}}], stack_config:{}});
         this.promotionCodes = ['preset_full_reduction'];
       } else if (name === 'percentage') {
         this.addToCart(this.products[1]);
-        await this.savePresetRule({promotion_code:'preset_percentage', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:90}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        await this.savePresetRule({promotion_code:'preset_percentage', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:90}}], scopes:[{scope_type:'all_items',config:{}}], stack_config:{}});
         this.promotionCodes = ['preset_percentage'];
       } else if (name === 'mutex') {
         this.addToCart(this.products[1]);
         this.cart[0].qty = 1; this.cart[0].price = 500;
-        await this.savePresetRule({promotion_code:'preset_mutex_a', strategy_type:'full_reduction', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:400,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:100}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
-        await this.savePresetRule({promotion_code:'preset_mutex_b', strategy_type:'full_reduction', priority:90, conditions:[{condition_type:'min_order_amount',config:{amount:400,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:50}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        await this.savePresetRule({promotion_code:'preset_mutex_a', strategy_type:'full_reduction', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:400,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:100}}], scopes:[{scope_type:'all_items',config:{}}], stack_config:{}});
+        await this.savePresetRule({promotion_code:'preset_mutex_b', strategy_type:'full_reduction', priority:90, conditions:[{condition_type:'min_order_amount',config:{amount:400,operator:'>='}}], actions:[{action_type:'fixed_amount_reduction',config:{amount:50}}], scopes:[{scope_type:'all_items',config:{}}], stack_config:{}});
         this.promotionCodes = ['preset_mutex_a', 'preset_mutex_b'];
         this.mutexGroup.ruleIds = ['preset_mutex_a', 'preset_mutex_b'];
       } else if (name === 'coupon') {
         this.addToCart(this.products[1]);
         this.cart[0].qty = 1; this.cart[0].price = 400;
         this.cartCoupons.find(c => c.code === 'REDUCE10').selected = true;
-        await this.savePresetRule({promotion_code:'preset_coupon', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:80}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        await this.savePresetRule({promotion_code:'preset_coupon', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:80}}], scopes:[{scope_type:'all_items',config:{}}], stack_config:{}});
         this.promotionCodes = ['preset_coupon'];
         this.settings.calculationOrder = 'promotions-first';
       } else if (name === 'optimal') {
         this.addToCart(this.products[1]);
         this.cart[0].qty = 1; this.cart[0].price = 400;
         this.cartCoupons.find(c => c.code === 'REDUCE10').selected = true; this.cartCoupons.find(c => c.code === 'REDUCE10').value = '50';
-        await this.savePresetRule({promotion_code:'preset_optimal', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:80}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        await this.savePresetRule({promotion_code:'preset_optimal', strategy_type:'percentage_discount', priority:100, conditions:[{condition_type:'min_order_amount',config:{amount:0,operator:'>='}}], actions:[{action_type:'percentage_discount',config:{percentage:80}}], scopes:[{scope_type:'all_items',config:{}}], stack_config:{}});
         this.promotionCodes = ['preset_optimal'];
         this.settings.calculationOrder = 'optimal';
       } else if (name === 'tiered') {
         this.addToCart(this.products[0]);
         this.cart[0].qty = 5;
-        await this.savePresetRule({promotion_code:'preset_tiered', strategy_type:'tiered_price', priority:100, conditions:[], actions:[{action_type:'tiered_price',config:{tiers:[{min_qty:1,max_qty:2,price:'50'},{min_qty:3,max_qty:5,price:'45'},{min_qty:6,price:'40'}]}}], scopes:[{scope_type:'all',config:{}}], stack_config:{}});
+        await this.savePresetRule({promotion_code:'preset_tiered', strategy_type:'tiered_price', priority:100, conditions:[], actions:[{action_type:'tiered_price',config:{tiers:[{min_qty:1,max_qty:2,price:'50'},{min_qty:3,max_qty:5,price:'45'},{min_qty:6,price:'40'}]}}], scopes:[{scope_type:'all_items',config:{}}], stack_config:{}});
         this.promotionCodes = ['preset_tiered'];
       } else if (name === 'default') {
-        this.addToCart(this.products[0]);
-        this.addToCart(this.products[3]);
+        // 初始状态：购物车为空
       }
     },
   }

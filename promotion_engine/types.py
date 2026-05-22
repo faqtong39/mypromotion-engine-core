@@ -107,9 +107,6 @@ class Rule:
     conditions: List[RuleCondition] = field(default_factory=list)
     actions: List[RuleAction] = field(default_factory=list)
     scopes: List[RuleScope] = field(default_factory=list)
-    # 价格保护
-    enable_price_protection: bool = False
-    price_protection_config: Optional[Dict[str, Any]] = None
     # 售后策略
     refund_config: Dict[str, Any] = field(default_factory=dict)
 
@@ -401,9 +398,6 @@ class CalculationResult:
     coupon_discount: Decimal = field(default_factory=lambda: Decimal("0"))
     used_coupons: List[Dict] = field(default_factory=list)
     shipping_fee: Decimal = field(default_factory=lambda: Decimal("0"))
-    # 价格保护冲突信息
-    price_protection_conflicts: List[Dict] = field(default_factory=list)
-    price_protection_can_proceed: bool = True
 
 
 @dataclass
@@ -446,24 +440,3 @@ class SpecialMutexRule:
     valid_to: Optional[datetime] = None
 
 
-# ==================== 价格保护相关类型 ====================
-
-@dataclass
-class PriceProtectionConfig:
-    """价格保护规则配置"""
-    # 成本价保护
-    enable_cost_protection: bool = True
-    min_gross_margin: Decimal = field(default_factory=lambda: Decimal("5.00"))
-    cost_protection_action: str = "block"   # block / warn
-
-    # 普通会员价保护
-    enable_member_protection: bool = True
-    member_price_threshold: Decimal = field(default_factory=lambda: Decimal("95.00"))
-    member_protection_action: str = "warn"
-    member_protection_levels: List[str] = field(default_factory=list)
-
-    # VIP会员价保护
-    enable_vip_protection: bool = True
-    vip_price_threshold: Decimal = field(default_factory=lambda: Decimal("95.00"))
-    vip_protection_action: str = "warn"
-    vip_protection_levels: List[str] = field(default_factory=list)
