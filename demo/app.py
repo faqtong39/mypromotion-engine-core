@@ -19,12 +19,16 @@ if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
 import json
+import logging
+import logging.handlers
+import os
 import threading
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
+from typing import Optional
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request, APIRouter
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -33,10 +37,10 @@ from promotion_engine.types import CalculationContext, RuleAction, RuleCondition
 from promotion_engine.refund import calculate_item_discounts, calculate_refund
 
 app = FastAPI(title="Promotion Engine Demo")
+api_router = APIRouter()
 
-# 静态文件
+# 静态文件（在 api_router include 之后注册，避免拦截 /demo/api/* 请求）
 static_dir = Path(__file__).parent / "static"
-app.mount("/demo", StaticFiles(directory=str(static_dir), html=True), name="demo")
 
 
 class CartItemInput(BaseModel):
@@ -71,6 +75,46 @@ RULE_STORE: dict[str, dict[str, dict]] = {}
 store_lock = threading.Lock()
 MAX_RULES_PER_SESSION = 5
 DATA_TTL_HOURS = 24
+
+# 事件日志（按天滚动文件存储，映射到宿主机）
+LOG_DIR = os.environ.get("LOG_DIR", os.path.join(os.path.dirname(__file__), "logs"))
+os.makedirs(LOG_DIR, exist_ok=True)
+
+_event_logger = logging.getLogger("promo_events")
+_event_logger.setLevel(logging.INFO)
+_event_logger.propagate = False
+
+_log_handler = logging.handlers.TimedRotatingFileHandler(
+    os.path.join(LOG_DIR, "events.log"),
+    when="midnight", interval=1, backupCount=7, encoding="utf-8"
+)
+_log_handler.setFormatter(logging.Formatter(
+    fmt="%(asctime)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+))
+_event_logger.addHandler(_log_handler)
+
+
+def _log_event(sid: str, event: str, data: Optional[dict] = None, ua: str = "", ip: str = ""):
+    """记录事件到滚动日志文件"""
+    if not sid or sid == 'default':
+        return
+    record = {
+        "timestamp": datetime.now().isoformat(),
+        "session_id": sid,
+        "event": event,
+        "data": data or {},
+        "ua": ua[:200] if ua else "",
+        "ip": ip,
+    }
+    _event_logger.info(json.dumps(record, ensure_ascii=False))
+
+
+def _get_client_info(request: Request):
+    """提取客户端信息 (ua, ip)"""
+    ua = request.headers.get("user-agent", "")
+    ip = request.headers.get("x-real-ip", "") or request.headers.get("x-forwarded-for", "").split(",")[0].strip() or request.client.host if request.client else ""
+    return ua, ip
 
 
 def get_session_id(request: Request) -> str:
@@ -132,23 +176,26 @@ class CalculateRequest(BaseModel):
     special_mutex_rules: list[SpecialMutexRuleInput] = []
 
 
-@app.get("/api/rules")
+@api_router.get("/rules")
 def list_rules(request: Request):
     sid = get_session_id(request)
     with store_lock:
-        return list(RULE_STORE.get(sid, {}).values())
+        rules = list(RULE_STORE.get(sid, {}).values())
+    ua, ip = _get_client_info(request)
+    _log_event(sid, "list_rules", {"count": len(rules)}, ua=ua, ip=ip)
+    return rules
 
 
-@app.post("/api/rules")
+@api_router.post("/rules")
 def save_rule(request: Request, rule: RuleInput):
     code = (rule.promotion_code or rule.strategy_type).strip()
     if not code:
-        return {"error": "promotion_code or strategy_type required"}, 400
+        raise HTTPException(status_code=400, detail="promotion_code or strategy_type required")
     sid = get_session_id(request)
     with store_lock:
         session_rules = RULE_STORE.setdefault(sid, {})
         if code not in session_rules and len(session_rules) >= MAX_RULES_PER_SESSION:
-            return {"error": f"每个用户最多保存 {MAX_RULES_PER_SESSION} 条规则"}, 400
+            raise HTTPException(status_code=400, detail=f"每个用户最多保存 {MAX_RULES_PER_SESSION} 条规则")
         session_rules[code] = {
             "promotion_code": code,
             "strategy_type": rule.strategy_type,
@@ -159,18 +206,22 @@ def save_rule(request: Request, rule: RuleInput):
             "stack_config": rule.stack_config or {},
             "_created_at": datetime.now().isoformat(),
         }
+    ua, ip = _get_client_info(request)
+    _log_event(sid, "save_rule", {"code": code, "strategy_type": rule.strategy_type}, ua=ua, ip=ip)
     return {"code": code, "message": "saved"}
 
 
-@app.delete("/api/rules/{code}")
+@api_router.delete("/rules/{code}")
 def delete_rule(request: Request, code: str):
     sid = get_session_id(request)
     with store_lock:
         session_rules = RULE_STORE.get(sid, {})
         if code in session_rules:
             del session_rules[code]
+            ua, ip = _get_client_info(request)
+            _log_event(sid, "delete_rule", {"code": code}, ua=ua, ip=ip)
             return {"message": "deleted"}
-    return {"error": "not found"}, 404
+    raise HTTPException(status_code=404, detail="not found")
 
 
 def _to_decimal(value) -> Decimal:
@@ -185,8 +236,9 @@ def _to_decimal(value) -> Decimal:
         return Decimal("0")
 
 
-@app.post("/api/calculate")
+@api_router.post("/calculate")
 def calculate(request: Request, req: CalculateRequest):
+    sid = get_session_id(request)
     cart = Cart()
     for item in req.cart_items:
         cart.add_item(CartItem(
@@ -328,7 +380,7 @@ def calculate(request: Request, req: CalculateRequest):
             return str(obj)
         raise TypeError
 
-    return json.loads(json.dumps({
+    response = json.loads(json.dumps({
         "applied_promotions": [
             {
                 "promotion_code": p.promotion_code,
@@ -355,6 +407,9 @@ def calculate(request: Request, req: CalculateRequest):
             "payable_amount": result.payable_amount,
         },
     }, default=decimal_default))
+    ua, ip = _get_client_info(request)
+    _log_event(sid, "checkout", {"payable": str(result.payable_amount), "codes": req.promotion_codes}, ua=ua, ip=ip)
+    return response
 
 
 class RefundRequest(BaseModel):
@@ -366,8 +421,9 @@ class RefundRequest(BaseModel):
     strategy: str = "proportional"
 
 
-@app.post("/api/refund")
-def refund(req: RefundRequest):
+@api_router.post("/refund")
+def refund(request: Request, req: RefundRequest):
+    sid = get_session_id(request)
     total_paid = _to_decimal(req.total_paid)
     refunded_total = _to_decimal(req.refunded_total)
     # 如果前端没传 item_discounts，根据策略重新计算
@@ -386,20 +442,33 @@ def refund(req: RefundRequest):
         total_paid=total_paid,
         refunded_total=refunded_total,
     )
+    ua, ip = _get_client_info(request)
+    _log_event(sid, "refund", {"amount": result.get("refund_amount"), "items": req.refund_items}, ua=ua, ip=ip)
     return result
 
 
-@app.get("/api/health")
+@api_router.get("/health")
 def health():
     return {"status": "ok"}
 
 
+# 同时挂载到 /api 和 /demo/api，兼容直接访问与 nginx 反向代理
+# 注意：/demo/api 必须在 /demo 静态文件 mount 之前注册，否则会被 StaticFiles 拦截
+app.include_router(api_router, prefix="/api")
+app.include_router(api_router, prefix="/demo/api")
+
+# 静态文件 mount 放在 router 之后，避免拦截 /demo/api/* 请求
+app.mount("/demo", StaticFiles(directory=str(static_dir), html=True), name="demo")
+
+
 def main():
     import uvicorn
+    import os
 
-    host = "127.0.0.1"
-    port = 8000
-    url = f"http://{host}:{port}/demo/"
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "8000"))
+    display_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
+    url = f"http://{display_host}:{port}/demo/"
 
     print(f"\nPromotion Engine Demo starting at {url}\n")
     uvicorn.run(app, host=host, port=port)

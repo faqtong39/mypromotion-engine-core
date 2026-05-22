@@ -1,0 +1,27 @@
+services:
+  promo-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mypromotion-engine-core
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    volumes:
+      # 日志持久化：按天滚动，映射到宿主机 ./logs
+      - ./logs:/app/logs
+    environment:
+      TZ: Asia/Shanghai
+      PORT: "8002"
+      LOG_DIR: /app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# 与 mypromotion 项目共享网络，nginx 可通过服务名访问
+networks:
+  default:
+    name: mypromotion_default
+    external: true

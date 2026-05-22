@@ -1082,11 +1082,20 @@ createApp({
   },
   mounted() {
     this.sessionId = this.getOrCreateSessionId();
+
     this.loadPreset('default');
     this.loadRules();
     this.loadOrders();
   },
   methods: {
+    getOrCreateSessionId() {
+      let sid = localStorage.getItem('promo_engine_session_id');
+      if (!sid) {
+        sid = 'sess_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem('promo_engine_session_id', sid);
+      }
+      return sid;
+    },
     showToast(message, type='info') {
       if (this.toast.timer) clearTimeout(this.toast.timer);
       this.toast = { show: true, message, type, timer: null };
@@ -1155,6 +1164,22 @@ createApp({
           sku: product.id, name: product.name, nameEn: product.nameEn,
           price: product.price, qty: 1, categoryId: product.category,
         });
+      }
+
+    },
+    removeFromCart(index) {
+      const item = this.cart[index];
+
+      this.cart.splice(index, 1);
+    },
+    changeQty(index, delta) {
+      const item = this.cart[index];
+      item.qty += delta;
+      if (item.qty <= 0) {
+
+        this.cart.splice(index, 1);
+      } else {
+
       }
     },
     removeFromCart(index) {
@@ -1302,7 +1327,7 @@ createApp({
     },
     async loadRules() {
       try {
-        const res = await fetch('/api/rules', { headers: { 'X-Session-ID': this.sessionId } });
+        const res = await fetch('api/rules', { headers: { 'X-Session-ID': this.sessionId } });
         this.ruleStore = await res.json();
       } catch (e) { console.error('loadRules failed', e); }
     },
@@ -1365,17 +1390,19 @@ createApp({
         stack_config: {},
       };
       try {
-        const res = await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload) });
+        const res = await fetch('api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload) });
         const data = await res.json();
         if (data.error) { this.showToast(data.error, 'error'); return; }
         await this.loadRules();
+
         this.showToast(this.t.saveOk, 'success');
       } catch (e) { this.showToast('Save failed: ' + e.message, 'error'); }
     },
     async deleteRuleFromStore(code) {
       if (!confirm(this.t.confirmDelete)) return;
       try {
-        const res = await fetch('/api/rules/' + encodeURIComponent(code), { method: 'DELETE', headers: { 'X-Session-ID': this.sessionId } });
+
+        const res = await fetch('api/rules/' + encodeURIComponent(code), { method: 'DELETE', headers: { 'X-Session-ID': this.sessionId } });
         await res.json();
         this.promotionCodes = this.promotionCodes.filter(c => c !== code);
         this.mutexGroup.ruleIds = this.mutexGroup.ruleIds.filter(c => c !== code);
@@ -1428,7 +1455,7 @@ createApp({
           }] : [],
         };
         this.apiRequest = JSON.stringify(payload, null, 2);
-        const res = await fetch('/api/calculate', {
+        const res = await fetch('api/calculate', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload),
         });
         this.checkoutResult = await res.json();
@@ -1458,7 +1485,7 @@ createApp({
           refunded_total: this.currentOrder.refunded_total || '0',
           strategy: this.refundStrategy,
         };
-        const res = await fetch('/api/refund', {
+        const res = await fetch('api/refund', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload),
         });
         this.refundResult = await res.json();
@@ -1482,6 +1509,7 @@ createApp({
           });
           this.currentOrder.status = allRefunded ? 'refunded' : 'partial_refunded';
           this.saveOrders();
+
         }
       } catch (e) {
         this.showToast('Refund failed: ' + e.message, 'error');
@@ -1565,11 +1593,12 @@ createApp({
     },
     async savePresetRule(payload) {
       try {
-        await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload) });
+        await fetch('api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-ID': this.sessionId }, body: JSON.stringify(payload) });
         await this.loadRules();
       } catch (e) { console.error('savePresetRule failed', e); }
     },
     async loadPreset(name) {
+
       this.cart = [];
       this.cartCoupons = [
         { code: 'REDUCE10', label: 'couponReduce', type: 'fixed_amount', value: '10', minOrder: '0', selected: false },
