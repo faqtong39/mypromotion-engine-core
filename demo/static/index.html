@@ -173,10 +173,23 @@
 
   /* 促销配置区折叠 */
   .left-col { position: sticky; top: 20px; }
+
+  /* Toast 提示 */
+  .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast-item { padding: 10px 18px; border-radius: 8px; font-size: 14px; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-20px); transition: all 0.3s ease; pointer-events: auto; min-width: 200px; text-align: center; }
+  .toast-item.show { opacity: 1; transform: translateY(0); }
+  .toast-item.success { background: linear-gradient(135deg, #10b981, #059669); }
+  .toast-item.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+  .toast-item.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 </style>
 </head>
 <body>
 <div id="app" class="app">
+  <!-- Toast 提示 -->
+  <div class="toast-container">
+    <div class="toast-item" :class="[toast.type, toast.show?'show':'']">{{ toast.message }}</div>
+  </div>
+
   <header>
     <div>
       <h1>{{ t.title }}</h1>
@@ -676,6 +689,7 @@ createApp({
       apiRequest: null,
       apiResponse: null,
       ruleIdCounter: 0,
+      toast: { show: false, message: '', type: 'info', timer: null },
     };
   },
   computed: {
@@ -763,6 +777,11 @@ createApp({
     this.loadRules();
   },
   methods: {
+    showToast(message, type='info') {
+      if (this.toast.timer) clearTimeout(this.toast.timer);
+      this.toast = { show: true, message, type, timer: null };
+      this.toast.timer = setTimeout(() => { this.toast.show = false; }, 2500);
+    },
     addToCart(product) {
       const existing = this.cart.find(item => item.sku === product.id);
       if (existing) {
@@ -925,7 +944,7 @@ createApp({
     },
     async saveRuleToStore() {
       const code = (this.newRule.promotion_code || this.newRule.strategy_type).trim();
-      if (!code) { alert(this.t.codeRequired); return; }
+      if (!code) { this.showToast(this.t.codeRequired, 'error'); return; }
       const conditions = [];
       if (this.newRule.condType) {
         const config = {};
@@ -966,11 +985,11 @@ createApp({
       try {
         const res = await fetch('/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const data = await res.json();
-        if (data.error) { alert(data.error); return; }
+        if (data.error) { this.showToast(data.error, 'error'); return; }
         await this.loadRules();
         this.newRule = { promotion_code: '', strategy_type: 'full_reduction', priority: 10, condType: 'min_order_amount', condParam: '', actType: 'fixed_amount_reduction', actParam: '', scopeType: 'all_items', scopeParam: '' };
-        alert(this.t.saveOk);
-      } catch (e) { alert('Save failed: ' + e.message); }
+        this.showToast(this.t.saveOk, 'success');
+      } catch (e) { this.showToast('Save failed: ' + e.message, 'error'); }
     },
     async deleteRuleFromStore(code) {
       if (!confirm(this.t.confirmDelete)) return;
@@ -980,7 +999,7 @@ createApp({
         this.promotionCodes = this.promotionCodes.filter(c => c !== code);
         this.mutexGroup.ruleIds = this.mutexGroup.ruleIds.filter(c => c !== code);
         await this.loadRules();
-      } catch (e) { alert('Delete failed: ' + e.message); }
+      } catch (e) { this.showToast('Delete failed: ' + e.message, 'error'); }
     },
     getRules() {
       return this.rules.map(rule => {
@@ -993,7 +1012,7 @@ createApp({
       });
     },
     async checkout() {
-      if (this.cart.length === 0) { alert(this.t.emptyCart); return; }
+      if (this.cart.length === 0) { this.showToast(this.t.emptyCart, 'info'); return; }
       this.showCheckout = true;
       this.checkoutLoading = true;
       this.checkoutResult = null;
@@ -1002,7 +1021,6 @@ createApp({
           cart_items: this.cart.map(item => ({
             sku: item.sku, price: String(item.price), qty: Number(item.qty) || 1, category_id: item.categoryId || '',
           })),
-          rules: [],
           promotion_codes: this.promotionCodes,
           coupons: this.selectedCoupons.map(c => {
             let type = c.type;
@@ -1034,13 +1052,13 @@ createApp({
         this.checkoutResult = await res.json();
         this.apiResponse = JSON.stringify(this.checkoutResult, null, 2);
       } catch (e) {
-        alert('Request failed: ' + e.message);
+        this.showToast('Request failed: ' + e.message, 'error');
       } finally {
         this.checkoutLoading = false;
       }
     },
     confirmOrder() {
-      alert(this.lang === 'zh' ? '订单已提交！' : 'Order placed!');
+      this.showToast(this.lang === 'zh' ? '订单已提交！' : 'Order placed!', 'success');
       this.showCheckout = false;
     },
     addRuleToMutexGroup() {
