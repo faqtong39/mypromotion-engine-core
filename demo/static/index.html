@@ -96,6 +96,18 @@
   .product-price { font-size: 16px; font-weight: 700; color: var(--danger); margin-bottom: 10px; }
   .product-card .btn { width: 100%; }
 
+  /* 互斥组标签 */
+  .mutex-tag-list { display: flex; flex-direction: column; gap: 6px; }
+  .mutex-tag { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--gray-200); border-radius: 6px; background: #fafafa; font-size: 13px; }
+  .mutex-tag-remove { cursor: pointer; color: var(--gray-400); font-size: 18px; line-height: 1; padding: 0 4px; margin-left: auto; }
+  .mutex-tag-remove:hover { color: var(--danger); }
+
+  /* 生效规则 checkbox 去默认蓝框 */
+  /* 表单 checkbox 去默认蓝框 */
+  .form-checkbox { position: relative; width: 14px; height: 14px; border: 1px solid var(--gray-400); border-radius: 3px; background: #fff; cursor: pointer; appearance: none; -webkit-appearance: none; flex: none; margin: 0; outline: none; box-shadow: none; }
+  .form-checkbox:checked { background: var(--primary); border-color: var(--primary); }
+  .form-checkbox:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
   /* 购物车 */
   .cart-panel { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 16px; }
   .cart-panel .section-title { margin-bottom: 12px; }
@@ -218,10 +230,10 @@
           <template v-if="ruleTab==='list'">
             <div style="display:flex;flex-direction:column;gap:6px">
               <div v-for="r in ruleStore" :key="r.promotion_code" style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--gray-200);border-radius:6px;background:#fafafa">
-                <code style="font-size:12px;background:#f3f4f6;padding:2px 6px;border-radius:4px;flex:none">{{ r.promotion_code }}</code>
+                <code style="font-size:12px;background:#f3f4f6;padding:2px 6px;border-radius:4px;flex:none;cursor:pointer;color:var(--primary);text-decoration:underline" @click="fillRuleToForm(r)" title="点击复制到新建规则">{{ r.promotion_code }}</code>
                 <span style="font-size:13px;flex:1">{{ codeLabel(r) }}</span>
                 <span style="font-size:12px;color:var(--gray-500);flex:none">P{{ r.priority }}</span>
-                <button class="btn btn-danger btn-sm" @click="deleteRuleFromStore(r.promotion_code)">{{ t.delete }}</button>
+                <span style="cursor:pointer;color:var(--gray-400);font-size:18px;line-height:1;padding:0 4px" @click.stop="deleteRuleFromStore(r.promotion_code)" title="删除">×</span>
               </div>
               <div v-if="ruleStore.length===0" class="empty-state">{{ t.emptyStore }}</div>
             </div>
@@ -265,10 +277,12 @@
                 <option v-for="r in availableMutexRules" :key="r.name" :value="r.name">{{ r.displayName }} (P{{ r.priority }})</option>
               </select>
             </div>
-            <div class="cart-coupon-list" v-if="mutexGroup.ruleIds.length">
-              <div class="cart-coupon-tag" v-for="(rid, ridx) in mutexGroup.ruleIds" :key="rid">
-                {{ ruleDisplayMap[rid] || rid }} (P{{ (ruleStore.find(x => x.promotion_code === rid) || {}).priority || '' }})
-                <button class="coupon-remove" @click="removeRuleFromMutexGroup(ridx)">×</button>
+            <div class="mutex-tag-list" v-if="mutexGroup.ruleIds.length">
+              <div class="mutex-tag" v-for="(rid, ridx) in mutexGroup.ruleIds" :key="rid">
+                <code style="font-size:12px;background:#f3f4f6;padding:2px 6px;border-radius:4px;flex:none">{{ rid }}</code>
+                <span style="flex:1">{{ ruleDisplayMap[rid] || rid }}</span>
+                <span style="font-size:12px;color:var(--gray-500);flex:none">P{{ (ruleStore.find(x => x.promotion_code === rid) || {}).priority || '' }}</span>
+                <span class="mutex-tag-remove" @click="removeRuleFromMutexGroup(ridx)">×</span>
               </div>
             </div>
           </div>
@@ -295,7 +309,7 @@
           </div>
           <div class="form-row" style="margin-bottom:10px">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;min-width:auto">
-              <input type="checkbox" v-model="settings.isFirstOrder" style="width:auto;flex:none;height:auto"> {{ t.isFirstOrder }}
+              <input type="checkbox" v-model="settings.isFirstOrder" style="width:auto;flex:none;height:auto;outline:none"> {{ t.isFirstOrder }}
             </label>
           </div>
 
@@ -781,6 +795,51 @@ createApp({
       if (this.toast.timer) clearTimeout(this.toast.timer);
       this.toast = { show: true, message, type, timer: null };
       this.toast.timer = setTimeout(() => { this.toast.show = false; }, 2500);
+    },
+    fillRuleToForm(r) {
+      const cond = r.conditions?.[0] || {};
+      const act = r.actions?.[0] || {};
+      const scope = r.scopes?.[0] || {};
+      const condCfg = cond.config || {};
+      const actCfg = act.config || {};
+      const scopeCfg = scope.config || {};
+      // 条件参数
+      let condParam = '';
+      const condParamKey = this.COND_TYPES.find(c => c.value === cond.condition_type)?.param;
+      if (condParamKey && condCfg[condParamKey] !== undefined) {
+        condParam = Array.isArray(condCfg[condParamKey]) ? condCfg[condParamKey].join(',') : String(condCfg[condParamKey]);
+      }
+      if (cond.condition_type === 'user_group' && condCfg.group_ids) {
+        condParam = Array.isArray(condCfg.group_ids) ? condCfg.group_ids.join(',') : String(condCfg.group_ids);
+      }
+      // 动作参数
+      let actParam = '';
+      const actParamKey = this.ACTION_TYPES.find(a => a.value === act.action_type)?.param;
+      if (actParamKey && actCfg[actParamKey] !== undefined) {
+        actParam = String(actCfg[actParamKey]);
+      }
+      // 范围参数
+      let scopeParam = '';
+      const scopeParamKey = this.SCOPE_TYPES.find(s => s.value === scope.scope_type)?.param;
+      if (scopeParamKey && scopeCfg[scopeParamKey] !== undefined) {
+        scopeParam = Array.isArray(scopeCfg[scopeParamKey]) ? scopeCfg[scopeParamKey].join(',') : String(scopeCfg[scopeParamKey]);
+      }
+      if (scope.scope_type === 'except_items' && scopeCfg.except_skus) {
+        scopeParam = Array.isArray(scopeCfg.except_skus) ? scopeCfg.except_skus.join(',') : String(scopeCfg.except_skus);
+      }
+      this.newRule = {
+        promotion_code: r.promotion_code + '_copy',
+        strategy_type: r.strategy_type,
+        priority: r.priority,
+        condType: cond.condition_type || 'min_order_amount',
+        condParam: condParam,
+        actType: act.action_type || 'fixed_amount_reduction',
+        actParam: actParam,
+        scopeType: scope.scope_type || 'all_items',
+        scopeParam: scopeParam,
+      };
+      this.ruleTab = 'create';
+      this.showToast(this.lang === 'zh' ? '已填充到新建规则，请修改后保存' : 'Copied to new rule form. Edit and save.', 'info');
     },
     addToCart(product) {
       const existing = this.cart.find(item => item.sku === product.id);
