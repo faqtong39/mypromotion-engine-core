@@ -15,7 +15,7 @@ services:
       PORT: "8002"
       LOG_DIR: /app/logs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/api/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/api/health')"]
       interval: 10s
       timeout: 5s
       retries: 5
