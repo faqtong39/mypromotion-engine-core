@@ -20,8 +20,4 @@ services:
       timeout: 5s
       retries: 5
 
-# 与 mypromotion 项目共享网络，nginx 可通过服务名访问
-networks:
-  default:
-    name: mypromotion_default
-    external: true
+
