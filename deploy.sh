@@ -13,19 +13,24 @@ echo "========================================"
 echo "mypromotion-engine-core 部署"
 echo "========================================"
 
-# 1. 构建镜像
+# 1. 拉取最新代码
 echo ""
-echo "[1/3] 构建镜像..."
+echo "[1/4] 拉取最新代码..."
+git pull
+
+# 2. 构建镜像
+echo ""
+echo "[2/4] 构建镜像..."
 DOCKER_BUILDKIT=1 docker compose build
 
-# 2. 启动服务
+# 3. 启动服务
 echo ""
-echo "[2/3] 启动服务..."
+echo "[3/4] 启动服务..."
 docker compose up -d
 
-# 3. 等待健康检查
+# 4. 等待健康检查
 echo ""
-echo "[3/3] 等待服务就绪..."
+echo "[4/4] 等待服务就绪..."
 for i in {1..30}; do
     HEALTH=$(docker inspect --format='{{.State.Health.Status}}' mypromotion-engine-core 2>/dev/null || echo "unknown")
     if [ "$HEALTH" = "healthy" ]; then
