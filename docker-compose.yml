@@ -20,4 +20,9 @@ services:
       timeout: 5s
       retries: 5
 
+networks:
+  default:
+    name: mypromotion
+    external: true
+
 
