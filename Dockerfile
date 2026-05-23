@@ -2,6 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# 配置 pip 阿里云镜像源（国内加速）
+ENV PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+ENV PIP_TRUSTED_HOST=mirrors.aliyun.com
+
 # 安装依赖
 COPY pyproject.toml .
 RUN pip install -e .[demo]
