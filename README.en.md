@@ -1,14 +1,16 @@
 # mypromotion-engine-core
 
-High-precision promotion calculation engine for Python. Decimal-native, mutex-aware, pluggable. Zero framework dependency.
+> High-precision promotion calculation engine for Python. Supports full reduction, percentage discount, tiered pricing, fixed price, coupons, points deduction, price protection, and refund allocation. Decimal-native, mutex-aware, pluggable. Zero framework dependency.
 
 [Live Demo](https://mp.tooly.run/demo) · [PyPI](https://pypi.org/project/mypromotion-engine-core/)
+
+**Keywords**: promotion engine, e-commerce discount calculator, coupon system, tiered pricing, refund allocation, price protection, shopping cart promotion, Python e-commerce, Decimal precision
 
 ---
 
 ## Live Demo
 
-![demo](doc/assets/demo.gif)
+![Promotion engine demo: visual interface for full reduction, tiered pricing, coupons, and refund simulation](doc/assets/demo.gif)
 
 ### [🔗 Visit Live Demo](https://mp.tooly.run/demo)
 
@@ -55,6 +57,14 @@ Features: create/edit/delete rules, real-time calculation, refund simulation, ex
 
 ---
 
+## Use Cases
+
+- **E-commerce platforms**: full reduction, percentage discount, tiered pricing, coupon stacking
+- **Retail stores**: member discounts, fixed price, points deduction
+- **O2O delivery**: shipping fee reduction, first-order discounts, user-segment targeting
+- **SaaS providers**: multi-tenant promotion rule engine, open API integration
+- **Financial reconciliation**: refund allocation tracing, calculation snapshot, audit compliance
+
 ## Key Features
 
 | Feature | Description |
@@ -84,7 +94,9 @@ SKU match       skip reasons       pass/fail           Decimal precision
 
 ## Open Source vs SaaS
 
-| Capability | Open Source | SaaS Platform |
+> This open-source engine and the [MyPromotion SaaS Platform](https://mp.tooly.run) are maintained by the same team. The SaaS is built on top of this engine, adding enterprise capabilities such as multi-tenancy, user segmentation, product pools, and monitoring.
+
+| Capability | Open Source | [SaaS Platform](https://mp.tooly.run) |
 |------------|-------------|---------------|
 | Rule Management | In-memory rule library, visual creation | Visual admin, 55+ templates |
 | Promotion Strategies | Full reduction, fixed price, tiered pricing | 15 core strategies (discount, seckill, pre-sale, coupon, points, etc.) |
@@ -99,6 +111,38 @@ SKU match       skip reasons       pass/fail           Decimal precision
 | Security | Basic authentication | Three-level rate limiting, OAuth2 / RBAC, audit compliance |
 
 ---
+
+## Comparison with Alternatives
+
+| Dimension | Open Source | Hand-written code | Spreadsheet | [MyPromotion SaaS](https://mp.tooly.run) |
+|-----------|-------------|-------------------|-------------|----------------------------------------|
+| Float precision | ✅ Decimal-native | ❌ float errors | ❌ formula errors | ✅ Decimal-native |
+| Rule mutex | ✅ 4-layer auto check | ❌ hard-coded | ❌ unsupported | ✅ 4-layer + rule-level stack control |
+| Refund trace | ✅ Per-SKU allocation | ❌ scattered logic | ❌ no trace | ✅ Snapshot + audit trails |
+| Integration cost | ✅ pip install | ⚠️ person-years | ⚠️ maintenance | 💰 Pay-as-you-go (free during early access) |
+| Data privacy | ✅ Local execution | ✅ Self-controlled | ❌ leak risk | ⚠️ Cloud data |
+
+## FAQ
+
+**Q: How is this different from writing `if/else` for discounts?**
+
+A: Hand-written code works for simple rules, but explodes in complexity when you add more types (full reduction, percentage, tiered pricing, coupons, points). The engine abstracts this into a standard pipeline. New rule types are just plugins—no core code changes needed.
+
+**Q: Which Python versions are supported?**
+
+A: Python 3.9+. Zero dependencies. Optional `pip install -e .[demo]` for FastAPI demo dependencies.
+
+**Q: Can it integrate with my existing e-commerce backend?**
+
+A: Yes. The engine core is a pure Python library. Pass in a cart item list + promotion rules, get back calculation results. Framework-agnostic—works with Django, Flask, FastAPI, or any Python backend.
+
+**Q: Will refund calculations match the original order?**
+
+A: Yes. The forward calculation generates a `trace` snapshot recording per-SKU allocation. Refunds read this snapshot directly and apply the original ratio, eliminating discrepancies.
+
+**Q: How do I deploy to production?**
+
+A: Docker + Docker Compose one-click deployment with healthcheck and log rotation. See `docker-compose.yml` and `deploy.sh` in the project root.
 
 ## Running Tests
 

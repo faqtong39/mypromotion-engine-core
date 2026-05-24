@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Promotion Engine Demo</title>
 <style>
   :root {
@@ -355,7 +356,7 @@
         </div>
         <div class="card-body" v-if="showCompare" style="padding-top:0">
           <table class="compare-table">
-            <thead><tr><th>{{ t.compareFeature }}</th><th>{{ t.compareOpen }}</th><th>{{ t.compareSaaS }}</th></tr></thead>
+            <thead><tr><th>{{ t.compareFeature }}</th><th>{{ t.compareOpen }}</th><th><a href="https://mp.tooly.run" target="_blank" style="color:inherit;text-decoration:none">{{ t.compareSaaS }}</a></th></tr></thead>
             <tbody>
               <tr><td>{{ t.compareRules }}</td><td>{{ t.compareRulesOpen }}</td><td>{{ t.compareRulesSaaS }}</td></tr>
               <tr><td>{{ t.compareStrategies }}</td><td>{{ t.compareStrategiesOpen }}</td><td>{{ t.compareStrategiesSaaS }}</td></tr>

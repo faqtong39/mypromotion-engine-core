@@ -5,13 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mypromotion-engine-core"
 version = "0.1.0"
-description = "High-precision promotion calculation engine for Python. Decimal-native, mutex-aware, pluggable. Zero framework dependency."
+description = "High-precision promotion calculation engine for Python. Supports full reduction, tiered pricing, coupons, points deduction, price protection, and refund allocation. Decimal-native, mutex-aware, pluggable."
 readme = "README.md"
 license = {text = "Apache-2.0"}
 authors = [
     {name = "MyPromotion Team"},
 ]
-keywords = ["promotion", "e-commerce", "discount", "pricing", "decimal", "engine"]
+keywords = ["promotion", "e-commerce", "discount", "pricing", "decimal", "engine", "coupon", "sale", "promotion-engine", "refund", "tiered-pricing", "price-protection", "checkout", "shopping-cart", "满减", "优惠券", "促销引擎", "电商"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
