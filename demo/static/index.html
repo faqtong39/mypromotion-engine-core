@@ -358,14 +358,16 @@
             <thead><tr><th>{{ t.compareFeature }}</th><th>{{ t.compareOpen }}</th><th>{{ t.compareSaaS }}</th></tr></thead>
             <tbody>
               <tr><td>{{ t.compareRules }}</td><td>{{ t.compareRulesOpen }}</td><td>{{ t.compareRulesSaaS }}</td></tr>
+              <tr><td>{{ t.compareStrategies }}</td><td>{{ t.compareStrategiesOpen }}</td><td>{{ t.compareStrategiesSaaS }}</td></tr>
               <tr><td>{{ t.compareCalc }}</td><td>{{ t.compareCalcOpen }}</td><td>{{ t.compareCalcSaaS }}</td></tr>
-              <tr><td>{{ t.compareTenant }}</td><td>{{ t.compareTenantOpen }}</td><td>{{ t.compareTenantSaaS }}</td></tr>
+              <tr><td>{{ t.comparePriceProtect }}</td><td>{{ t.comparePriceProtectOpen }}</td><td>{{ t.comparePriceProtectSaaS }}</td></tr>
+              <tr><td>{{ t.compareAfterSales }}</td><td>{{ t.compareAfterSalesOpen }}</td><td>{{ t.compareAfterSalesSaaS }}</td></tr>
+              <tr><td>{{ t.compareRefund }}</td><td>{{ t.compareRefundOpen }}</td><td>{{ t.compareRefundSaaS }}</td></tr>
               <tr><td>{{ t.compareUserGroup }}</td><td>{{ t.compareUserGroupOpen }}</td><td>{{ t.compareUserGroupSaaS }}</td></tr>
               <tr><td>{{ t.compareProductPool }}</td><td>{{ t.compareProductPoolOpen }}</td><td>{{ t.compareProductPoolSaaS }}</td></tr>
-              <tr><td>{{ t.comparePriceProtect }}</td><td>{{ t.comparePriceProtectOpen }}</td><td>{{ t.comparePriceProtectSaaS }}</td></tr>
-              <tr><td>{{ t.compareRefund }}</td><td>{{ t.compareRefundOpen }}</td><td>{{ t.compareRefundSaaS }}</td></tr>
-              <tr><td>{{ t.compareCoupon }}</td><td>{{ t.compareCouponOpen }}</td><td>{{ t.compareCouponSaaS }}</td></tr>
+              <tr><td>{{ t.compareTenant }}</td><td>{{ t.compareTenantOpen }}</td><td>{{ t.compareTenantSaaS }}</td></tr>
               <tr><td>{{ t.compareMonitor }}</td><td>{{ t.compareMonitorOpen }}</td><td>{{ t.compareMonitorSaaS }}</td></tr>
+              <tr><td>{{ t.compareSecurity }}</td><td>{{ t.compareSecurityOpen }}</td><td>{{ t.compareSecuritySaaS }}</td></tr>
             </tbody>
           </table>
           <a href="https://mp.tooly.run" target="_blank" class="btn btn-primary btn-sm" style="margin-top:10px;display:inline-block;text-decoration:none">{{ t.compareLink }} →</a>
@@ -759,21 +761,21 @@ const I18N = {
     compareRules: '规则管理',
     compareRulesOpen: '内存规则库，可视化创建',
     compareRulesSaaS: '可视化后台，55+业务模板',
+    compareStrategies: '支持的促销策略',
+    compareStrategiesOpen: '满减、固定价、阶梯价等基础策略',
+    compareStrategiesSaaS: '15 种核心策略（满减、满折、秒杀、预售、优惠券、积分抵扣等）',
     compareCalc: '计算方式',
     compareCalcOpen: '编码查库，支持顺序/互斥/替换',
-    compareCalcSaaS: '编码查库，智能叠加计算',
+    compareCalcSaaS: '编码查库，规则级叠加控制（白名单/黑名单/强制叠加/最大叠加数）',
     compareTenant: '多租户',
     compareTenantOpen: '无',
     compareTenantSaaS: '租户隔离，权限分级',
     compareRefund: '退款计算',
-    compareRefundOpen: '3种分摊策略，部分退款，金额保护',
-    compareRefundSaaS: '计算凭证快照，逆向退款',
+    compareRefundOpen: 'SKU 级追溯',
+    compareRefundSaaS: '同开源 + 历史快照归档与审计明细',
     compareMonitor: '运营监控',
-    compareMonitorOpen: '无',
-    compareMonitorSaaS: '审计日志，效果分析看板',
-    compareCoupon: '消费券',
-    compareCouponOpen: '满减/折扣券，前端抵扣',
-    compareCouponSaaS: '券模板，发放核销，数据追踪',
+    compareMonitorOpen: '基础事件日志，Python SDK',
+    compareMonitorSaaS: '实时仪表盘、开放 API、多语言 SDK',
     compareLink: '了解更多',
     engineLabel: '促销计算引擎',
     mallLabel: '业务商城系统',
@@ -786,7 +788,13 @@ const I18N = {
     compareProductPoolSaaS: '动态商品池，黑白名单',
     comparePriceProtect: '价格保护',
     comparePriceProtectOpen: '无',
-    comparePriceProtectSaaS: '成本价保护，防击穿预警',
+    comparePriceProtectSaaS: '降价自动退差价，独立价格保护模块',
+    compareAfterSales: '售后策略',
+    compareAfterSalesOpen: '3 种分摊策略（比例退还/保留优惠/全额退）',
+    compareAfterSalesSaaS: '同开源 + 可复用售后策略模板',
+    compareSecurity: '安全',
+    compareSecurityOpen: '基础鉴权',
+    compareSecuritySaaS: '三级限流、OAuth2 / RBAC、审计合规',
     refundSimulate: '售后退款模拟',
     refundHint: '选择要退款的商品和数量，系统按策略计算分摊明细',
     refundQty: '退',
@@ -886,21 +894,21 @@ const I18N = {
     compareRules: 'Rule Management',
     compareRulesOpen: 'In-memory rules, visual builder',
     compareRulesSaaS: 'Visual admin, 55+ templates',
+    compareStrategies: 'Promotion Strategies',
+    compareStrategiesOpen: 'Full reduction, fixed price, tiered pricing',
+    compareStrategiesSaaS: '15 core strategies (discount, seckill, pre-sale, coupon, points, etc.)',
     compareCalc: 'Calculation',
     compareCalcOpen: 'Code lookup, order/mutex/replace support',
-    compareCalcSaaS: 'Code lookup, smart stacking',
+    compareCalcSaaS: 'Code lookup, rule-level stack control (whitelist/blacklist/force-stack/max-stack)',
     compareTenant: 'Multi-tenant',
     compareTenantOpen: 'None',
     compareTenantSaaS: 'Tenant isolation, RBAC',
     compareRefund: 'Refund',
-    compareRefundOpen: '3 strategies, partial refund, cap protection',
-    compareRefundSaaS: 'Calc snapshot, reverse refund',
+    compareRefundOpen: 'Per-SKU traceability',
+    compareRefundSaaS: 'Same as open source + snapshot archiving & audit trails',
     compareMonitor: 'Monitoring',
-    compareMonitorOpen: 'None',
-    compareMonitorSaaS: 'Audit log, analytics dashboard',
-    compareCoupon: 'Coupons',
-    compareCouponOpen: 'Full-reduction / percentage coupon, frontend deduction',
-    compareCouponSaaS: 'Coupon template, issue, tracking',
+    compareMonitorOpen: 'Basic event logs, Python SDK',
+    compareMonitorSaaS: 'Real-time dashboard, Open API, multi-language SDKs',
     compareLink: 'Learn more',
     engineLabel: 'Promotion Engine',
     mallLabel: 'Business Mall',
@@ -913,7 +921,13 @@ const I18N = {
     compareProductPoolSaaS: 'Dynamic pool, whitelist/blacklist',
     comparePriceProtect: 'Price Protection',
     comparePriceProtectOpen: 'None',
-    comparePriceProtectSaaS: 'Cost protection, anti-break',
+    comparePriceProtectSaaS: 'Automatic price-drop refund, dedicated price protection module',
+    compareAfterSales: 'After-sales Policy',
+    compareAfterSalesOpen: '3 allocation strategies (proportional/keep-discount/full-refund)',
+    compareAfterSalesSaaS: 'Same as open source + reusable after-sales policy templates',
+    compareSecurity: 'Security',
+    compareSecurityOpen: 'Basic authentication',
+    compareSecuritySaaS: 'Three-level rate limiting, OAuth2 / RBAC, audit compliance',
     refundSimulate: 'Refund Simulation',
     refundHint: 'Select items and quantities to refund',
     refundQty: 'Qty',
