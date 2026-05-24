@@ -1,6 +1,6 @@
 # mypromotion-engine-core
 
-> Python 高精度促销计算引擎。支持满减、满折、阶梯价、固定价、优惠券、积分抵扣、价格保护、退款分摊等电商促销规则计算。原生 Decimal，互斥感知，可插拔。零框架依赖。
+> Python 高精度促销计算引擎（Promotion Engine）。支持满减、满折、阶梯价、固定价、优惠券、积分抵扣、价格保护、退款分摊等电商促销规则计算。原生 Decimal，互斥感知，可插拔。零框架依赖。
 
 [在线体验](https://mp.tooly.run/demo) · [PyPI](https://pypi.org/project/mypromotion-engine-core/)
 
@@ -16,7 +16,7 @@
 
 ---
 
-## 30 秒上手
+## 30 秒上手：写一个促销规则
 
 ```bash
 git clone https://github.com/faqtong/mypromotion-engine-core.git
@@ -29,10 +29,12 @@ from decimal import Decimal
 from promotion_engine import Engine, Cart, CartItem, Rule
 from promotion_engine.types import CalculationContext
 
+# 创建购物车，添加商品
 cart = Cart()
 cart.add_item(CartItem(sku="T001", price=Decimal("199.00"), quantity=2))
 cart.add_item(CartItem(sku="T002", price=Decimal("89.00"), quantity=1))
 
+# 配置促销规则：满 300 减 50
 engine = Engine()
 context = CalculationContext(cart_items=cart.items)
 result = engine.calculate(context, rules=[Rule.full_reduction(threshold=300, amount=50)])
@@ -53,16 +55,16 @@ python demo/app.py
 
 浏览器打开 `http://127.0.0.1:8000/demo/`
 
-支持：增删改查促销规则、实时计算、退款模拟、导出 JSON。
+启动后可体验完整的促销规则管理功能：增删改查促销规则、实时促销计算、退款模拟、导出 JSON。
 
 ---
 
 ## 适用场景
 
-- **电商平台**：满减、满折、阶梯价、优惠券叠加计算
+- **电商促销平台**：满减、满折、阶梯价、优惠券叠加计算
 - **零售门店**：会员折扣、固定价、积分抵扣
 - **O2O 外卖**：满减配送费、首单优惠、用户分群定向
-- **SaaS 服务商**：多租户促销规则引擎、开放 API 集成
+- **SaaS 促销服务商**：多租户促销规则引擎、开放 API 集成
 - **财务对账**：退款分摊追溯、计算凭证快照、审计合规
 
 ## 核心特性

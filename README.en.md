@@ -16,7 +16,7 @@
 
 ---
 
-## 30-Second Quick Start
+## 30-Second Quick Start: Write a Promotion Rule
 
 ```bash
 git clone https://github.com/faqtong/mypromotion-engine-core.git
