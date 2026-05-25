@@ -1,6 +1,10 @@
 # mypromotion-engine-core
 
-> Python 高精度促销计算引擎（Promotion Engine）。支持满减、满折、阶梯价、固定价、优惠券、积分抵扣、价格保护、退款分摊等电商促销规则计算。原生 Decimal，互斥感知，可插拔。零框架依赖。
+高性能、高精度电商促销计算引擎（Promotion Engine），促销引擎、营销规则引擎、优惠计算引擎、折扣引擎。
+
+支持满减、满折、阶梯价、固定价、优惠券、积分抵扣、价格保护、退款分摊等复杂电商营销规则计算，支持促销互斥、叠加、优先级与最优优惠决策。适用于电商订单优惠、价格计算、营销活动等场景。
+
+原生 Decimal 精度计算，可插拔架构，零框架依赖。纯 Python 实现，开箱即用。
 
 [在线体验](https://mp.tooly.run/demo) · [PyPI](https://pypi.org/project/mypromotion-engine-core/)
 
