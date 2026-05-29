@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -228,10 +228,12 @@
   .toast-item.success { background: linear-gradient(135deg, #10b981, #059669); }
   .toast-item.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
   .toast-item.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+  [v-cloak] { display: none !important; }
 </style>
 </head>
 <body>
-<div id="app" class="app">
+<div id="app" class="app" v-cloak>
   <!-- Toast 提示 -->
   <div class="toast-container">
     <div class="toast-item" :class="[toast.type, toast.show?'show':'']">{{ toast.message }}</div>
@@ -368,6 +370,7 @@
               <tr><td>{{ t.compareRules }}</td><td>{{ t.compareRulesOpen }}</td><td>{{ t.compareRulesSaaS }}</td></tr>
               <tr><td>{{ t.compareStrategies }}</td><td>{{ t.compareStrategiesOpen }}</td><td>{{ t.compareStrategiesSaaS }}</td></tr>
               <tr><td>{{ t.compareCalc }}</td><td>{{ t.compareCalcOpen }}</td><td>{{ t.compareCalcSaaS }}</td></tr>
+              <tr><td>{{ t.compareConflict }}</td><td>{{ t.compareConflictOpen }}</td><td>{{ t.compareConflictSaaS }}</td></tr>
               <tr><td>{{ t.comparePriceProtect }}</td><td>{{ t.comparePriceProtectOpen }}</td><td>{{ t.comparePriceProtectSaaS }}</td></tr>
               <tr><td>{{ t.compareAfterSales }}</td><td>{{ t.compareAfterSalesOpen }}</td><td>{{ t.compareAfterSalesSaaS }}</td></tr>
               <tr><td>{{ t.compareRefund }}</td><td>{{ t.compareRefundOpen }}</td><td>{{ t.compareRefundSaaS }}</td></tr>
@@ -477,11 +480,11 @@
               <input v-model="settings.userPoints" placeholder="0" style="width:80px;flex:none">
             </div>
             <!-- 生效规则 -->
-            <div style="padding-top:10px;border-top:1px dashed var(--gray-200);margin-top:10px">
-              <label style="min-width:auto;font-weight:600;display:block;margin-bottom:6px;font-size:12px">{{ t.activeRules }}</label>
+            <div style="padding:12px;margin-top:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
+              <label style="min-width:auto;font-weight:700;display:block;margin-bottom:8px;font-size:13px;color:#1e40af">📋 {{ t.activeRules }}</label>
               <div v-if="ruleStore.length===0" class="empty-state" style="padding:8px;font-size:12px">{{ t.emptyStore }}</div>
               <div v-else style="display:flex;flex-wrap:wrap;gap:6px">
-                <label v-for="c in ruleStore" :key="c.promotion_code" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 6px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;background:#fff" :style="promotionCodes.includes(c.promotion_code)?'border-color:var(--primary)':''">
+                <label v-for="c in ruleStore" :key="c.promotion_code" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 12px;border-radius:6px;font-size:13px;font-weight:500;border:1px solid #cbd5e1;background:#f1f5f9;color:#475569;transition:all .15s" :style="promotionCodes.includes(c.promotion_code)?'border-color:var(--primary);background:var(--primary-light);color:var(--primary);font-weight:600;box-shadow:0 0 0 2px rgba(37,99,235,0.15)':''">
                   <input type="checkbox" :value="c.promotion_code" v-model="promotionCodes" style="width:auto;flex:none">
                   <code style="font-size:11px">{{ c.promotion_code }}</code>
                 </label>
@@ -800,6 +803,9 @@ const I18N = {
     compareAfterSales: '售后策略',
     compareAfterSalesOpen: '3 种分摊策略（比例退还/保留优惠/全额退）',
     compareAfterSalesSaaS: '同开源 + 可复用售后策略模板',
+    compareConflict: '冲突检测',
+    compareConflictOpen: '互斥组（手动配置）',
+    compareConflictSaaS: '自动扫描时间/范围/策略/优先级冲突，带修复建议',
     compareSecurity: '安全',
     compareSecurityOpen: '基础鉴权',
     compareSecuritySaaS: '三级限流、OAuth2 / RBAC、审计合规',
@@ -933,6 +939,9 @@ const I18N = {
     compareAfterSales: 'After-sales Policy',
     compareAfterSalesOpen: '3 allocation strategies (proportional/keep-discount/full-refund)',
     compareAfterSalesSaaS: 'Same as open source + reusable after-sales policy templates',
+    compareConflict: 'Conflict Detection',
+    compareConflictOpen: 'Mutex groups (manual config)',
+    compareConflictSaaS: 'Auto-scan time/range/strategy/priority conflicts with fix suggestions',
     compareSecurity: 'Security',
     compareSecurityOpen: 'Basic authentication',
     compareSecuritySaaS: 'Three-level rate limiting, OAuth2 / RBAC, audit compliance',
